@@ -9,6 +9,9 @@ defmodule HandmadeHub.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
     field :role, :string, default: "buyer"
+    field :name, :string
+    field :bio, :string
+    field :profile_image, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -158,5 +161,14 @@ defmodule HandmadeHub.Accounts.User do
     else
       add_error(changeset, :current_password, "is not valid")
     end
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for changing the user profile.
+  """
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:name, :bio, :profile_image])
+    |> validate_length(:bio, max: 500)
   end
 end

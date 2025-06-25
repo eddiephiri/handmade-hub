@@ -215,6 +215,12 @@ defmodule HandmadeHub.Accounts do
     end
   end
 
+  def update_user_profile(%User{} = user, attrs) do
+    user
+    |> User.profile_changeset(attrs)
+    |> Repo.update()
+  end
+
   ## Session
 
   @doc """
@@ -350,4 +356,6 @@ defmodule HandmadeHub.Accounts do
       {:error, :user, changeset, _} -> {:error, changeset}
     end
   end
+
+
 end

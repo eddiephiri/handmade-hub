@@ -1,0 +1,26 @@
+<div class="mx-auto max-w-lg mt-10">
+  <.header class="mb-6 text-center">
+    Edit Your Profile
+  </.header>
+
+  <.simple_form
+    for={@form}
+    id="profile_form"
+    phx-submit="save"
+    phx-change="validate"
+  >
+    <.input field={@form[:name]} type="text" label="Name" />
+    <.input field={@form[:bio]} type="textarea" label="Bio" />
+
+    <.input
+      field={@form[:profile_image]}
+      type="file"
+      label="Profile Image"
+      accept="image/*"
+    />
+
+    <:actions>
+      <.button class="w-full">Save Changes</.button>
+    </:actions>
+  </.simple_form>
+</div>
