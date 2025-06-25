@@ -3,7 +3,7 @@ import Config
 # Configure your database
 config :handmade_hub, HandmadeHub.Repo,
   username: "postgres",
-  password: "postgres",
+  password: "5c0rp1027",
   hostname: "localhost",
   database: "handmade_hub_dev",
   stacktrace: true,
