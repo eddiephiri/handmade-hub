@@ -1,0 +1,116 @@
+<div class="max-w-6xl mx-auto">
+  <.link navigate={~p"/browse"} class="inline-flex items-center text-blue-600 hover:text-blue-800 mb-6">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+    </svg>
+    Back to Browse
+  </.link>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Product Image -->
+    <div class="space-y-4">
+      <%= if @product.image do %>
+        <img 
+          src={"/uploads/#{@product.image}"} 
+          alt={@product.name} 
+          class="w-full h-96 object-cover rounded-lg shadow-lg"
+        >
+      <% else %>
+        <div class="w-full h-96 bg-gray-200 flex items-center justify-center rounded-lg">
+          <span class="text-gray-500 text-lg">No image available</span>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Product Details -->
+    <div class="space-y-6">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2"><%= @product.name %></h1>
+        <p class="text-sm text-gray-500 mb-4">
+          by <span class="font-medium text-gray-700"><%= @product.artisan.name || "Anonymous Artisan" %></span>
+        </p>
+      </div>
+
+      <div class="border-t border-b py-4">
+        <div class="flex justify-between items-center">
+          <span class="text-3xl font-bold text-green-600">K<%= @product.price %></span>
+          <div class="text-right">
+            <%= if @product.quantity > 0 do %>
+              <span class="text-green-600 font-medium">In Stock</span>
+              <p class="text-sm text-gray-500"><%= @product.quantity %> available</p>
+            <% else %>
+              <span class="text-red-600 font-medium">Out of Stock</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Description</h3>
+        <p class="text-gray-700 leading-relaxed">
+          <%= @product.description || "No description available." %>
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <%= if @current_user && @current_user.role == "buyer" do %>
+        <div class="space-y-3">
+          <%= if @product.quantity > 0 do %>
+            <.button
+              phx-click="add_to_cart"
+              phx-value-product_id={@product.id}
+              class="w-full bg-blue-600 hover:bg-blue-700 text-lg py-3"
+            >
+              Add to Cart
+            </.button>
+            <.button class="w-full bg-green-600 hover:bg-green-700 text-lg py-3">
+              Buy Now
+            </.button>
+          <% else %>
+            <.button disabled class="w-full bg-gray-400 text-lg py-3 cursor-not-allowed">
+              Out of Stock
+            </.button>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <p class="text-gray-600">
+            <%= if @current_user do %>
+              Only buyers can purchase products.
+            <% else %>
+              <.link navigate={~p"/users/log_in"} class="text-blue-600 hover:text-blue-800">
+                Log in
+              </.link> to purchase this item.
+            <% end %>
+          </p>
+        </div>
+      <% end %>
+
+      <!-- Artisan Info -->
+      <div class="bg-gray-50 p-4 rounded-lg">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">About the Artisan</h3>
+        <div class="flex items-start space-x-3">
+          <%= if @product.artisan.profile_image do %>
+            <img 
+              src={"/uploads/#{@product.artisan.profile_image}"} 
+              alt={@product.artisan.name}
+              class="w-12 h-12 rounded-full object-cover"
+            >
+          <% else %>
+            <div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+              <span class="text-gray-600 font-medium text-sm">
+                <%= String.first(@product.artisan.name || "A") |> String.upcase() %>
+              </span>
+            </div>
+          <% end %>
+          <div>
+            <p class="font-medium text-gray-900"><%= @product.artisan.name || "Anonymous Artisan" %></p>
+            <%= if @product.artisan.bio do %>
+              <p class="text-sm text-gray-600 mt-1"><%= @product.artisan.bio %></p>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

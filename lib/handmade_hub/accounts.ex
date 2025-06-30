@@ -357,5 +357,7 @@ defmodule HandmadeHub.Accounts do
     end
   end
 
+  # Delegate for user profile changeset
+  def profile_changeset(user, attrs), do: User.profile_changeset(user, attrs)
 
 end

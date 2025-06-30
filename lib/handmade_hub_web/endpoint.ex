@@ -25,6 +25,10 @@ defmodule HandmadeHubWeb.Endpoint do
     gzip: false,
     only: HandmadeHubWeb.static_paths()
 
+  # Serve static uploads from priv/static/uploads at /uploads URL path
+  plug Plug.Static,
+    at: "/uploads", from: Path.expand("./priv/static/uploads"), gzip: false
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do

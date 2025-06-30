@@ -21,6 +21,13 @@ defmodule HandmadeHubWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    # Public browsing routes (available to everyone)
+    live_session :public_browsing,
+      on_mount: [{HandmadeHubWeb.UserAuth, :mount_current_user}] do
+      live "/browse", BrowseLive.Index, :index
+      live "/browse/:id", BrowseLive.Show, :show
+    end
   end
 
   # Other scopes may use custom stacks.
@@ -70,6 +77,12 @@ defmodule HandmadeHubWeb.Router do
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
       live "/users/settings/profile", UserProfileLive
 
+      # Product management routes (restricted to artisans only)
+      live "/products", ProductLive.Index, :index
+      live "/products/new", ProductLive.Index, :new
+      live "/products/:id/edit", ProductLive.Index, :edit
+      live "/products/:id", ProductLive.Show, :show
+      live "/products/:id/show/edit", ProductLive.Show, :edit
     end
   end
 

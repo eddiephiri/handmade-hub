@@ -25,21 +25,16 @@ defmodule HandmadeHubWeb.UserProfileLive do
             {:noreply,
              socket
              |> put_flash(:info, "Profile updated successfully.")
-             |> push_navigate(to: ~p"/dashboard")} # Update destination
+             |> push_navigate(to: ~p"/users/settings/profile")} # Update destination
           {:error, changeset} ->
             {:noreply, assign(socket, form: to_form(changeset))}
         end
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, "Upload failed: #{reason}")}
     end
   end
 
-  defp handle_upload(socket, %{"profile_image" => %Phoenix.LiveView.UploadEntry{} = upload} = params) do
+  defp handle_upload(_socket, %{"profile_image" => %Phoenix.LiveView.UploadEntry{} = upload} = params) do
     upload_path = Path.join(["priv/static/uploads/profile_images", upload.client_name])
-
     File.cp(upload.path, upload_path)
-
     {:ok, Map.put(params, "profile_image", "/uploads/profile_images/#{upload.client_name}")}
   end
 
