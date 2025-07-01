@@ -84,6 +84,9 @@ defmodule HandmadeHubWeb.Router do
       live "/products/:id/edit", ProductLive.Index, :edit
       live "/products/:id", ProductLive.Show, :show
       live "/products/:id/show/edit", ProductLive.Show, :edit
+
+      # Artisan dashboard route (restricted to artisans only)
+      live "/artisan/dashboard", ArtisanDashboardLive, :index
     end
   end
 

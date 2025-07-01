@@ -16,7 +16,7 @@ defmodule HandmadeHub.Catalog.Product do
   @doc false
   def changeset(product, attrs) do
     product
-    |> cast(attrs, [:name, :description, :price, :quantity, :image])
-    |> validate_required([:name, :description, :price, :quantity, :image])
+    |> cast(attrs, [:name, :description, :price, :quantity, :image, :artisan_id])
+    |> validate_required([:name, :description, :price, :quantity, :image, :artisan_id])
   end
 end

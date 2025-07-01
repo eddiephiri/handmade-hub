@@ -74,7 +74,13 @@ defmodule HandmadeHubWeb.ProductLive.FormComponent do
     image_url = List.first(uploaded_files)
     product_params = if image_url, do: Map.put(product_params, "image", image_url), else: product_params
 
-    save_product(socket, socket.assigns.action, product_params)
+    params =
+      if socket.assigns.action == :new do
+        Map.put(product_params, "artisan_id", socket.assigns.current_user.id)
+      else
+        product_params
+      end
+    save_product(socket, socket.assigns.action, params)
   end
 
   defp save_product(socket, :edit, product_params) do
