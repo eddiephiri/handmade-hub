@@ -1,120 +1,235 @@
-<div class="mb-8">
-  <h1 class="text-3xl font-bold text-gray-900">Browse Handmade Products</h1>
-  <p class="text-lg text-gray-500 mt-1">Discover unique handmade items from local artisans in Lusaka</p>
-</div>
-
-<!-- Search Bar -->
-<div class="mt-6 mb-8">
-  <.simple_form for={%{}} as={:search} phx-change="search" phx-submit="search" class="flex gap-4">
-    <div class="flex-1">
-      <.input
-        name="query"
-        type="text"
-        placeholder="Search products..."
-        value={@search_query}
-        class="w-full"
-      />
+<!-- Hero Section -->
+<div class="bg-gradient-to-r from-blue-600 to-purple-600">
+  <div class="max-w-[85rem] mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:py-16">
+    <!-- Authentication Buttons -->
+    <div class="flex justify-end mb-6">
+      <%= if @current_user do %>
+        <!-- Logged in user - show logout button -->
+        <div class="flex items-center gap-4">
+          <span class="text-white text-sm">
+            Welcome, <%= @current_user.name || @current_user.email %>
+          </span>
+          <.link
+            href={~p"/users/log_out"}
+            method="delete"
+            class="inline-flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-lg border border-white/20 bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:bg-white/20 transition-colors"
+          >
+            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16,17 21,12 16,7"/>
+              <line x1="21" x2="9" y1="12" y2="12"/>
+            </svg>
+            Logout
+          </.link>
+        </div>
+      <% else %>
+        <!-- Not logged in - show login and register buttons -->
+        <div class="flex items-center gap-3">
+          <.link
+            navigate={~p"/users/log_in"}
+            class="inline-flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-lg border border-white/20 bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:bg-white/20 transition-colors"
+          >
+            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+              <polyline points="10,17 15,12 10,7"/>
+              <line x1="15" x2="3" y1="12" y2="12"/>
+            </svg>
+            Login
+          </.link>
+          <.link
+            navigate={~p"/users/register"}
+            class="inline-flex items-center gap-x-2 py-2 px-3 text-sm font-medium rounded-lg bg-white text-blue-600 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 transition-colors"
+          >
+            <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="m22 21-2-2"/>
+              <path d="M16 16h4"/>
+            </svg>
+            Register
+          </.link>
+        </div>
+      <% end %>
     </div>
-    <.button type="submit" class="px-6">Search</.button>
-    <%= if @search_query != "" do %>
-      <.button type="button" phx-click="clear_search">Clear</.button>
-    <% end %>
-  </.simple_form>
+    
+    <div class="max-w-2xl text-center mx-auto">
+      <h1 class="block text-3xl font-bold text-white sm:text-4xl md:text-5xl">
+        Browse Handmade Products
+      </h1>
+      <p class="mt-3 text-lg text-gray-200">
+        Discover unique handmade items from local artisans in Lusaka
+      </p>
+    </div>
+  </div>
 </div>
 
-<!-- Search Results Info -->
-<%= if @search_query != "" do %>
-  <div class="mb-4">
-    <p class="text-sm text-gray-600">
-      Showing <%= length(@filtered_products) %> result(s) for "<%= @search_query %>"
-    </p>
-  </div>
-<% end %>
-
-<!-- Products Grid -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-  <div :for={product <- @filtered_products} class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-    <.link navigate={~p"/browse/#{product.id}"} class="block">
-      <div class="aspect-w-16 aspect-h-9">
-        <%= if product.image do %>
-          <img src={"/uploads/#{product.image}"} alt={product.name} class="w-full h-48 object-cover">
-        <% else %>
-          <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-            <span class="text-gray-500">No image</span>
+<!-- Search Section -->
+<div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14 mx-auto">
+  <div class="max-w-2xl mx-auto">
+    <.simple_form for={%{}} as={:search} phx-change="search" phx-submit="search">
+      <div class="relative">
+        <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none z-20 ps-4">
+          <svg class="shrink-0 size-4 text-gray-400 dark:text-white/60" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+        </div>
+        <.input
+          name="query"
+          type="text"
+          class="py-3 ps-11 pe-4 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+          placeholder="Search for handmade products..."
+          value={@search_query}
+        />
+        <%= if @search_query != "" do %>
+          <div class="absolute inset-y-0 end-0 flex items-center pointer-events-none z-20 pe-4">
+            <button type="button" phx-click="clear_search" class="inline-flex shrink-0 justify-center items-center size-6 rounded-full text-gray-500 hover:text-blue-600 focus:outline-none focus:text-blue-600 dark:text-neutral-500 dark:hover:text-blue-500 dark:focus:text-blue-500 pointer-events-auto">
+              <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m18 6-12 12"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+            </button>
           </div>
         <% end %>
       </div>
-    </.link>
-    
-    <div class="p-4">
-      <.link navigate={~p"/browse/#{product.id}"}>
-        <h3 class="text-lg font-semibold text-gray-900 mb-2 hover:text-blue-600 transition-colors">
-          <%= product.name %>
-        </h3>
-      </.link>
-      
-      <p class="text-gray-600 text-sm mb-3 line-clamp-2">
-        <%= product.description %>
+    </.simple_form>
+  </div>
+
+  <!-- Search Results Info -->
+  <%= if @search_query != "" do %>
+    <div class="max-w-2xl mx-auto mt-5">
+      <p class="text-sm text-gray-600 text-center dark:text-neutral-400">
+        Showing <%= length(@filtered_products) %> result(s) for "<span class="font-medium"><%= @search_query %></span>"
       </p>
-      
-      <!-- Artisan Info -->
-      <div class="mb-3">
-        <p class="text-xs text-gray-500">
-          by <span class="font-medium"><%= product.artisan.name || "Anonymous Artisan" %></span>
-        </p>
-      </div>
-      
-      <div class="flex justify-between items-center mb-4">
-        <span class="text-xl font-bold text-green-600">K<%= product.price %></span>
-        <span class="text-sm text-gray-500">
-          <%= if product.quantity > 0 do %>
-            In Stock (<%= product.quantity %>)
-          <% else %>
-            Out of Stock
-          <% end %>
-        </span>
-      </div>
-      
-      <div class="space-y-2">
+    </div>
+  <% end %>
+</div>
+
+<!-- Products Grid -->
+<div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 mx-auto">
+  <%= if !Enum.empty?(@filtered_products) do %>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+      <div :for={product <- @filtered_products} class="group flex flex-col bg-white border shadow-sm rounded-xl hover:shadow-md focus:outline-none focus:shadow-md transition dark:bg-neutral-900 dark:border-neutral-800">
         <.link navigate={~p"/browse/#{product.id}"} class="block">
-          <.button class="w-full">View Details</.button>
+          <div class="aspect-w-16 aspect-h-9 overflow-hidden rounded-t-xl">
+            <%= if product.image do %>
+              <img src={"/uploads/#{product.image}"} alt={product.name} class="w-full h-48 object-cover group-hover:scale-105 group-focus:scale-105 transition-transform duration-500 ease-in-out rounded-t-xl">
+            <% else %>
+              <div class="w-full h-48 bg-gray-100 flex items-center justify-center rounded-t-xl dark:bg-neutral-800">
+                <svg class="size-12 text-gray-400 dark:text-neutral-600" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                  <circle cx="9" cy="9" r="2"></circle>
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                </svg>
+              </div>
+            <% end %>
+          </div>
         </.link>
         
-        <%= if @current_user && @current_user.role == "buyer" && product.quantity > 0 do %>
-          <.button
-            phx-click="add_to_cart"
-            phx-value-product_id={product.id}
-            class="w-full bg-blue-600 hover:bg-blue-700"
-          >
-            Add to Cart
-          </.button>
+        <div class="p-4 md:p-5">
+          <.link navigate={~p"/browse/#{product.id}"}>
+            <h3 class="text-lg font-bold text-gray-800 group-hover:text-blue-600 dark:text-white dark:group-hover:text-blue-400">
+              <%= product.name %>
+            </h3>
+          </.link>
+          
+          <p class="mt-2 text-gray-500 text-sm line-clamp-2 dark:text-neutral-500">
+            <%= product.description %>
+          </p>
+          
+          <!-- Artisan Info -->
+          <div class="mt-3">
+            <p class="text-xs text-gray-500 dark:text-neutral-500">
+              by <span class="font-medium text-gray-700 dark:text-neutral-300"><%= product.artisan.name || "Anonymous Artisan" %></span>
+            </p>
+          </div>
+          
+          <!-- Price and Stock -->
+          <div class="mt-4 flex justify-between items-center">
+            <span class="text-xl font-bold text-blue-600 dark:text-blue-400">K<%= product.price %></span>
+            <div class="text-right">
+              <%= if product.quantity > 0 do %>
+                <span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800/30 dark:text-green-500">
+                  <span class="size-1.5 inline-block rounded-full bg-green-800 dark:bg-green-500"></span>
+                  In Stock (<%= product.quantity %>)
+                </span>
+              <% else %>
+                <span class="inline-flex items-center gap-x-1.5 py-1.5 px-3 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-800/30 dark:text-red-500">
+                  <span class="size-1.5 inline-block rounded-full bg-red-800 dark:bg-red-500"></span>
+                  Out of Stock
+                </span>
+              <% end %>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="mt-5 space-y-2">
+            <.link navigate={~p"/browse/#{product.id}"} class="w-full py-2 px-3 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+              View Details
+            </.link>
+            
+            <%= if @current_user && @current_user.role == "buyer" && product.quantity > 0 do %>
+              <.button
+                phx-click="add_to_cart"
+                phx-value-product_id={product.id}
+                class="w-full py-2 px-3 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg border border-gray-200 bg-white text-gray-800 shadow-sm hover:bg-gray-50 focus:outline-none focus:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-800 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-700 dark:focus:bg-neutral-700"
+              >
+                <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m5 12 7-7 7 7"/>
+                  <path d="M12 19V5"/>
+                </svg>
+                Add to Cart
+              </.button>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% else %>
+    <!-- Empty State -->
+    <div class="max-w-sm mx-auto">
+      <div class="text-center">
+        <svg class="mx-auto size-16 text-gray-400 dark:text-neutral-600" width="101" height="101" viewBox="0 0 101 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <g clip-path="url(#clip0_1921_3288)">
+            <path d="M37.6772 51.0654L50.5001 63.8882L63.3229 51.0654" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M50.5 63.8882V36.1216" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M85.6667 63.8882C85.6667 70.2216 85.6667 73.3882 84.4001 75.6549C83.2667 77.6882 81.3667 79.1549 78.7334 79.7882C76.6667 80.3216 74.0667 80.3216 68.8667 80.3216H32.1334C26.9334 80.3216 24.3334 80.3216 22.2667 79.7882C19.6334 79.1549 17.7334 77.6882 16.6001 75.6549C15.3334 73.3882 15.3334 70.2216 15.3334 63.8882C15.3334 63.0549 15.3334 62.6549 15.4667 62.3882C15.6001 62.1549 15.8001 61.9549 16.0334 61.8216C16.3001 61.6882 16.7001 61.6882 17.5334 61.6882H83.4667C84.3001 61.6882 84.7001 61.6882 84.9667 61.8216C85.2001 61.9549 85.4001 62.1549 85.5334 62.3882C85.6667 62.6549 85.6667 63.0549 85.6667 63.8882Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M25.6667 61.6882L30.5334 22.6882C30.8001 20.4216 32.7334 18.7882 35.0001 18.7882H66.0001C68.2667 18.7882 70.2001 20.4216 70.4667 22.6882L75.3334 61.6882" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <defs>
+            <clipPath id="clip0_1921_3288">
+              <rect width="72" height="72" fill="white" transform="translate(14.5 14.5)"/>
+            </clipPath>
+          </defs>
+        </svg>
+        <div class="mt-4">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
+            <%= if @search_query != "" do %>
+              No products found
+            <% else %>
+              No products available
+            <% end %>
+          </h3>
+          <p class="text-gray-500 mt-1 dark:text-neutral-500">
+            <%= if @search_query != "" do %>
+              Try adjusting your search terms or browse all products.
+            <% else %>
+              Check back later for new handmade items from our artisans.
+            <% end %>
+          </p>
+        </div>
+        <%= if @search_query != "" do %>
+          <div class="mt-5">
+            <button type="button" phx-click="clear_search" class="py-2 px-3 inline-flex items-center gap-x-2 text-sm font-medium rounded-lg border border-transparent bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">
+              <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m18 6-12 12"></path>
+                <path d="m6 6 12 12"></path>
+              </svg>
+              Clear Search
+            </button>
+          </div>
         <% end %>
       </div>
     </div>
-  </div>
+  <% end %>
 </div>
-
-<!-- Empty State -->
-<%= if Enum.empty?(@filtered_products) do %>
-  <div class="text-center py-12">
-    <div class="mx-auto h-24 w-24 text-gray-400">
-      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-      </svg>
-    </div>
-    <h3 class="mt-4 text-lg font-medium text-gray-900">
-      <%= if @search_query != "" do %>
-        No products found
-      <% else %>
-        No products available
-      <% end %>
-    </h3>
-    <p class="mt-2 text-gray-500">
-      <%= if @search_query != "" do %>
-        Try adjusting your search terms.
-      <% else %>
-        Check back later for new handmade items.
-      <% end %>
-    </p>
-  </div>
-<% end %>

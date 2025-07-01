@@ -1,30 +1,89 @@
-<header class="flex flex-wrap sm:justify-start sm:flex-nowrap z-50 w-full bg-white text-sm py-4 dark:bg-gray-800">
-  <nav class="max-w-[85rem] w-full mx-auto px-4 sm:flex sm:items-center sm:justify-between" aria-label="Global">
-    <a class="flex-none text-xl font-semibold dark:text-white" href={~p"/"}>HandmadeHub</a>
-    <div class="flex flex-row items-center gap-5 mt-5 sm:justify-end sm:mt-0 sm:ps-5">
-      <.link href={~p"/browse"} class="font-medium text-gray-600 hover:text-gray-400 dark:text-gray-400 dark:hover:text-gray-500">Browse</.link>
-      <%= if @current_user do %>
-        <.link href={~p"/products/new"} class="font-medium text-gray-600 hover:text-gray-400 dark:text-gray-400 dark:hover:text-gray-500">Sell</.link>
-        <.link href={~p"/users/settings"} class="font-medium text-blue-500">
-          <%= @current_user.email %>
-        </.link>
-        <.link
-          href={~p"/users/log_out"}
-          method="delete"
-          class="font-medium text-gray-600 hover:text-gray-400 dark:text-gray-400 dark:hover:text-gray-500"
-        >
-          Log out
-        </.link>
-      <% else %>
-        <.link href={~p"/users/register"} class="font-medium text-gray-600 hover:text-gray-400 dark:text-gray-400 dark:hover:text-gray-500">Register</.link>
-        <.link href={~p"/users/log_in"} class="font-medium text-blue-500">
-          Log in
-        </.link>
-      <% end %>
+<!-- ========== HEADER ========== -->
+<header class="flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full bg-white border-b border-gray-200 dark:bg-neutral-800 dark:border-neutral-700">
+  <nav class="relative max-w-[85rem] w-full mx-auto md:flex md:items-center md:justify-between md:gap-3 py-2 px-4 sm:px-6 lg:px-8">
+    <!-- Logo -->
+    <div class="flex justify-between items-center gap-x-1">
+      <a class="flex-none font-semibold text-xl text-black focus:outline-none focus:opacity-80 dark:text-white" href={~p"/"} aria-label="HandmadeHub">
+        HandmadeHub
+      </a>
+
+      <!-- Collapse Button -->
+      <button type="button" class="md:hidden relative size-9 flex justify-center items-center text-sm font-semibold rounded-lg border border-gray-200 text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:border-neutral-700 dark:hover:bg-neutral-700 dark:focus:bg-neutral-700" id="hs-header-classic-collapse" aria-expanded="false" aria-controls="hs-header-classic" aria-label="Toggle navigation" data-hs-collapse="#hs-header-classic">
+        <svg class="hs-collapse-open:hidden size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" x2="21" y1="6" y2="6"/>
+          <line x1="3" x2="21" y1="12" y2="12"/>
+          <line x1="3" x2="21" y1="18" y2="18"/>
+        </svg>
+        <svg class="hs-collapse-open:block shrink-0 hidden size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m18 6-12 12"/>
+          <path d="m6 6 12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Collapse -->
+    <div id="hs-header-classic" class="hs-collapse hidden overflow-hidden transition-all duration-300 basis-full grow md:block" aria-labelledby="hs-header-classic-collapse">
+      <div class="overflow-hidden overflow-y-auto max-h-[75vh] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-track]:bg-neutral-700 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-500">
+        <div class="py-2 md:py-0 flex flex-col md:flex-row md:items-center md:justify-end gap-0.5 md:gap-1">
+          <!-- Navigation Links -->
+          <.link href={~p"/browse"} class="p-2 flex items-center text-sm font-medium text-gray-800 hover:text-gray-500 focus:outline-none focus:text-gray-500 dark:text-neutral-200 dark:hover:text-neutral-500 dark:focus:text-neutral-500">
+            Browse
+          </.link>
+          
+          <%= if @current_user do %>
+            <.link href={~p"/products/new"} class="p-2 flex items-center text-sm font-medium text-gray-800 hover:text-gray-500 focus:outline-none focus:text-gray-500 dark:text-neutral-200 dark:hover:text-neutral-500 dark:focus:text-neutral-500">
+              Sell
+            </.link>
+            
+            <!-- User Dropdown -->
+            <div class="hs-dropdown relative inline-flex">
+              <button id="hs-dropdown-account" type="button" class="size-[38px] inline-flex justify-center items-center gap-x-2 text-sm font-semibold rounded-full border border-transparent text-gray-800 focus:outline-none disabled:opacity-50 disabled:pointer-events-none dark:text-white" aria-haspopup="menu" aria-expanded="false" aria-label="Dropdown">
+                <img class="shrink-0 size-[38px] rounded-full" src="https://images.unsplash.com/photo-1568602471122-7432036e4c6a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=320&h=320&q=80" alt="Avatar">
+              </button>
+              
+              <div class="hs-dropdown-menu transition-[opacity,margin] duration hs-dropdown-open:opacity-100 opacity-0 hidden min-w-60 bg-white shadow-md rounded-lg mt-2 dark:bg-neutral-800 dark:border dark:border-neutral-700" role="menu" aria-orientation="vertical" aria-labelledby="hs-dropdown-account">
+                <div class="py-3 px-5 bg-gray-100 rounded-t-lg dark:bg-neutral-700">
+                  <p class="text-sm text-gray-500 dark:text-neutral-500">Signed in as</p>
+                  <p class="text-sm font-medium text-gray-800 dark:text-neutral-200"><%= @current_user.email %></p>
+                </div>
+                <div class="p-1.5 space-y-0.5">
+                  <.link href={~p"/users/settings"} class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 dark:focus:text-neutral-300">
+                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="m22 21-3-3m-3-3a6 6 0 1 0 6 6"/>
+                    </svg>
+                    Settings
+                  </.link>
+                  <.link href={~p"/users/log_out"} method="delete" class="flex items-center gap-x-3.5 py-2 px-3 rounded-lg text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 dark:text-neutral-400 dark:hover:bg-neutral-700 dark:hover:text-neutral-300 dark:focus:bg-neutral-700 dark:focus:text-neutral-300">
+                    <svg class="shrink-0 size-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16,17 21,12 16,7"/>
+                      <line x1="21" x2="9" y1="12" y2="12"/>
+                    </svg>
+                    Log out
+                  </.link>
+                </div>
+              </div>
+            </div>
+          <% else %>
+            <.link href={~p"/users/register"} class="p-2 flex items-center text-sm font-medium text-gray-800 hover:text-gray-500 focus:outline-none focus:text-gray-500 dark:text-neutral-200 dark:hover:text-neutral-500 dark:focus:text-neutral-500">
+              Register
+            </.link>
+            <.link href={~p"/users/log_in"} class="group inline-flex items-center gap-x-2 py-2 px-3 bg-blue-600 font-medium text-sm text-white rounded-lg focus:outline-none">
+              Log in
+            </.link>
+          <% end %>
+        </div>
+      </div>
     </div>
   </nav>
 </header>
-<main class="px-4 py-20 sm:px-6 lg:px-8">
+<!-- ========== END HEADER ========== -->
+
+<!-- ========== MAIN CONTENT ========== -->
+<main>
   <.flash_group flash={@flash} />
   <%= @inner_content %>
 </main>
+<!-- ========== END MAIN CONTENT ========== -->
