@@ -24,7 +24,8 @@ defmodule HandmadeHubWeb.Router do
 
     # Public browsing routes (available to everyone)
     live_session :public_browsing,
-      on_mount: [{HandmadeHubWeb.UserAuth, :mount_current_user}] do
+      on_mount: [{HandmadeHubWeb.UserAuth, :mount_current_user}],
+      layout: {HandmadeHubWeb.Layouts, :app} do
       live "/browse", BrowseLive.Index, :index
       live "/browse/:id", BrowseLive.Show, :show
     end
