@@ -4,3 +4,5 @@
 @import "preline/variants.css";
 
 /* This file is for your main application CSS */
+
+[x-cloak] { display: none !important; }

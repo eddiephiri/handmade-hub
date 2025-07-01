@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "alpinejs": "^3.14.9",
     "preline": "^3.1.0"
   }
 }
