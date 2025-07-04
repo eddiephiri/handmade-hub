@@ -20,5 +20,5 @@ defmodule HandmadeHubWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :handmade_hub
+  use Gettext.Backend, otp_app: :handmade_hub
 end

@@ -8,6 +8,7 @@ defmodule HandmadeHub.Catalog do
   alias HandmadeHub.Accounts.User
 
   alias HandmadeHub.Catalog.Product
+  alias HandmadeHub.Catalog.ProductImage
 
   @doc """
   Returns the list of products.
@@ -36,10 +37,12 @@ defmodule HandmadeHub.Catalog do
     query = from p in Product,
       join: a in User, on: p.artisan_id == a.id,
       where: p.quantity > 0,
+      preload: [:product_images],
       select: %{p | artisan: a},
       order_by: [desc: p.inserted_at]
 
     Repo.all(query)
+    |> Enum.filter(& &1.artisan)
   end
 
   @doc """
@@ -138,5 +141,34 @@ defmodule HandmadeHub.Catalog do
   # List products for a specific artisan (for artisan dashboard)
   def list_products_by_artisan(artisan_id) do
     Repo.all(from p in Product, where: p.artisan_id == ^artisan_id, order_by: [desc: p.inserted_at])
+  end
+
+  # Product Images
+  def create_product_image(attrs \\ %{}) do
+    %ProductImage{}
+    |> ProductImage.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def list_product_images(product_id) do
+    Repo.all(from i in ProductImage, where: i.product_id == ^product_id, order_by: [desc: i.is_primary, asc: i.inserted_at])
+  end
+
+  def set_primary_product_image(product_id, image_id) do
+    Repo.transaction(fn ->
+      # Set all images for this product to not primary
+      from(i in ProductImage, where: i.product_id == ^product_id)
+      |> Repo.update_all(set: [is_primary: false])
+      # Set the selected image as primary
+      image = Repo.get!(ProductImage, image_id)
+      image
+      |> ProductImage.changeset(%{is_primary: true})
+      |> Repo.update()
+    end)
+  end
+
+  def delete_product_image(image_id) do
+    image = Repo.get!(ProductImage, image_id)
+    Repo.delete(image)
   end
 end
