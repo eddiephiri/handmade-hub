@@ -1,12 +1,16 @@
 defmodule HandmadeHubWeb.BrowseLive.Index do
   use HandmadeHubWeb, :live_view
+  import HandmadeHubWeb.CoreComponents
 
   alias HandmadeHub.Catalog
+  alias HandmadeHub.Shopping
 
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     products = Catalog.list_all_products_with_artisans()
+    cart = get_or_create_cart(socket, session)
+    cart_item_count = if cart, do: Shopping.get_cart_item_count(cart.id), else: 0
 
     {:ok, assign(socket,
       filtered_products: products,
@@ -19,7 +23,9 @@ defmodule HandmadeHubWeb.BrowseLive.Index do
       show_filters: false,
       show_product_modal: false,
       selected_product: nil,
-      page_title: "Browse Products"
+      page_title: "Browse Products",
+      cart: cart,
+      cart_item_count: cart_item_count
     )}
   end
 
@@ -93,6 +99,26 @@ defmodule HandmadeHubWeb.BrowseLive.Index do
     {:noreply, put_flash(socket, :info, "Contact feature coming soon!")}
   end
 
+  @impl true
+  def handle_event("add_to_cart", %{"product_id" => product_id}, socket) do
+    product_id = String.to_integer(product_id)
+    
+    case Shopping.add_to_cart(socket.assigns.cart.id, product_id, 1) do
+      {:ok, _item} ->
+        cart_item_count = Shopping.get_cart_item_count(socket.assigns.cart.id)
+        {:noreply, 
+         socket
+         |> assign(:cart_item_count, cart_item_count)
+         |> put_flash(:info, "Product added to cart")}
+      
+      {:error, :insufficient_stock} ->
+        {:noreply, put_flash(socket, :error, "Not enough stock available")}
+      
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to add product to cart")}
+    end
+  end
+
   # Private helper functions
   defp filter_products(products, query, category, sort_by) do
     products
@@ -105,9 +131,10 @@ defmodule HandmadeHubWeb.BrowseLive.Index do
   defp filter_by_search(products, query) do
     query_lower = String.downcase(query)
     Enum.filter(products, fn product ->
+      artisan_name = if product.artisan && product.artisan.name, do: product.artisan.name, else: ""
       String.contains?(String.downcase(product.name), query_lower) or
       String.contains?(String.downcase(product.description || ""), query_lower) or
-      String.contains?(String.downcase(product.artisan.name || ""), query_lower)
+      String.contains?(String.downcase(artisan_name), query_lower)
     end)
   end
 
@@ -146,5 +173,38 @@ defmodule HandmadeHubWeb.BrowseLive.Index do
     |> Enum.reject(&is_nil/1)
     |> Enum.uniq()
     |> Enum.sort()
+  end
+
+  defp get_product_image(product) do
+    cond do
+      # Use primary image if available
+      is_list(product.product_images) and product.product_images != [] ->
+        case Enum.find(product.product_images, & &1.is_primary) do
+          nil -> product.product_images |> List.first() |> Map.get(:image_url)
+          img -> img.image_url
+        end
+
+      # Fallback to old image field
+      product.image != nil and product.image != "" ->
+        product.image
+
+      # Default placeholder
+      true ->
+        "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop"
+    end
+  end
+  
+  defp get_or_create_cart(socket, session) do
+    user_id = if socket.assigns[:current_user], do: socket.assigns.current_user.id, else: nil
+    session_id = Map.get(session, "session_uuid", generate_session_id())
+    
+    case Shopping.get_or_create_cart(user_id, session_id) do
+      {:ok, cart} -> cart
+      _ -> nil
+    end
+  end
+
+  defp generate_session_id do
+    :crypto.strong_rand_bytes(16) |> Base.encode64()
   end
 end

@@ -6,11 +6,10 @@ defmodule HandmadeHub.Catalog.Product do
     field :name, :string
     field :image, :string
     field :price, :decimal
-    field :artisan_id, :id
     field :category, :string
     field :quantity, :integer
     field :description, :string
-    field :artisan, :map, virtual: true
+    belongs_to :artisan, HandmadeHub.Accounts.User, foreign_key: :artisan_id
 
     has_many :product_images, HandmadeHub.Catalog.ProductImage, on_delete: :delete_all
 
@@ -21,7 +20,7 @@ defmodule HandmadeHub.Catalog.Product do
   def changeset(product, attrs) do
     product
     |> cast(attrs, [:name, :description, :price, :quantity, :image, :artisan_id, :category])
-    |> validate_required([:name, :description, :price, :quantity, :image, :artisan_id])
+    |> validate_required([:name, :description, :price, :quantity, :artisan_id])
   end
 end
 

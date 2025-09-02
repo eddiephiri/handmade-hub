@@ -9,14 +9,25 @@
 
 <div id="products" phx-update="stream" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
   <div :for={{id, product} <- @streams.products} id={id} class="bg-white rounded-lg shadow-md overflow-hidden">
-    <div class="aspect-w-16 aspect-h-9">
-      <%= if product.image do %>
-        <img src={product.image} alt={product.name} class="w-full h-48 object-cover">
-      <% else %>
-        <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-          <span class="text-gray-500">No image</span>
-        </div>
-      <% end %>
+    <div class="flex flex-col gap-2">
+      <span class="text-xs text-gray-500">Cover (object-top, cropped):</span>
+      <div class="aspect-w-1 aspect-h-1 bg-gray-100 flex items-center justify-center overflow-hidden">
+        <img 
+          src={get_product_image(product)} 
+          alt={product.name} 
+          class="w-full h-full object-cover rounded"
+          onerror="this.src='https://via.placeholder.com/400x400?text=No+Image'"
+        >
+      </div>
+      <span class="text-xs text-gray-500 mt-2">Contain (full image, letterboxed):</span>
+      <div class="aspect-w-2 aspect-h-3 bg-gray-100 flex items-center justify-center overflow-hidden">
+        <img 
+          src={get_product_image(product)} 
+          alt={product.name} 
+          class="w-full h-full object-contain rounded"
+          onerror="this.src='https://via.placeholder.com/400x400?text=No+Image'"
+        >
+      </div>
     </div>
     
     <div class="p-4">

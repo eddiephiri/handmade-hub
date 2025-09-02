@@ -63,4 +63,23 @@ defmodule HandmadeHubWeb.ProductLive.Index do
       {:noreply, stream_delete(socket, :products, product)}
     end
   end
+
+  defp get_product_image(product) do
+    cond do
+      # Use primary image if available
+      is_list(product.product_images) and product.product_images != [] ->
+        case Enum.find(product.product_images, & &1.is_primary) do
+          nil -> product.product_images |> List.first() |> Map.get(:image_url)
+          img -> img.image_url
+        end
+
+      # Fallback to old image field
+      product.image != nil and product.image != "" ->
+        product.image
+
+      # Default placeholder
+      true ->
+        "https://via.placeholder.com/400x400?text=No+Image"
+    end
+  end
 end

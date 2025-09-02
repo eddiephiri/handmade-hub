@@ -28,6 +28,7 @@ defmodule HandmadeHubWeb.Router do
       layout: {HandmadeHubWeb.Layouts, :app} do
       live "/browse", BrowseLive.Index, :index
       live "/browse/:id", BrowseLive.Show, :show
+      live "/cart", CartLive, :index
     end
   end
 
@@ -87,6 +88,13 @@ defmodule HandmadeHubWeb.Router do
 
       # Artisan dashboard route (restricted to artisans only)
       live "/artisan/dashboard", ArtisanDashboardLive, :index
+      
+      # Order management routes for users
+      live "/orders", OrderLive.Index, :index
+      live "/orders/:id", OrderLive.Show, :show
+      
+      # Buyer dashboard route
+      live "/buyer/dashboard", BuyerDashboardLive, :index
     end
   end
 

@@ -86,6 +86,7 @@ defmodule HandmadeHubWeb do
       # Core UI components and translation
       import HandmadeHubWeb.CoreComponents
       import HandmadeHubWeb.Gettext
+      import HandmadeHubWeb.FormatHelpers
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS

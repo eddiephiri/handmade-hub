@@ -1,0 +1,183 @@
+<div class="min-h-screen bg-gray-50">
+  <!-- Dashboard Header -->
+  <div class="bg-white shadow-sm border-b">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="py-6">
+        <h1 class="text-3xl font-bold text-gray-900">Welcome back, <%= @current_user.name || @current_user.email %>!</h1>
+        <p class="mt-2 text-gray-600">Here's an overview of your shopping activity</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <!-- Total Orders Card -->
+      <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Total Orders</p>
+            <p class="text-3xl font-bold text-gray-900 mt-2"><%= @stats.total_orders %></p>
+          </div>
+          <div class="bg-blue-100 rounded-full p-3">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Orders Card -->
+      <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Pending Orders</p>
+            <p class="text-3xl font-bold text-yellow-600 mt-2"><%= @stats.pending_orders %></p>
+          </div>
+          <div class="bg-yellow-100 rounded-full p-3">
+            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delivered Orders Card -->
+      <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Delivered</p>
+            <p class="text-3xl font-bold text-green-600 mt-2"><%= @stats.delivered_orders %></p>
+          </div>
+          <div class="bg-green-100 rounded-full p-3">
+            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Total Spent Card -->
+      <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-600">Total Spent</p>
+            <p class="text-3xl font-bold text-indigo-600 mt-2"><%= format_currency(@stats.total_spent) %></p>
+          </div>
+          <div class="bg-indigo-100 rounded-full p-3">
+            <svg class="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <.link navigate={~p"/browse"} class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+          <svg class="w-8 h-8 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <span class="text-sm font-medium text-gray-700">Browse Products</span>
+        </.link>
+        
+        <.link navigate={~p"/cart"} class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+          <div class="relative">
+            <svg class="w-8 h-8 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <%= if @cart_item_count > 0 do %>
+              <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                <%= @cart_item_count %>
+              </span>
+            <% end %>
+          </div>
+          <span class="text-sm font-medium text-gray-700">View Cart</span>
+        </.link>
+        
+        <.link navigate={~p"/orders"} class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+          <svg class="w-8 h-8 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <span class="text-sm font-medium text-gray-700">All Orders</span>
+        </.link>
+        
+        <.link navigate={~p"/users/settings"} class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+          <svg class="w-8 h-8 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          <span class="text-sm font-medium text-gray-700">Settings</span>
+        </.link>
+      </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h2 class="text-lg font-semibold text-gray-900">Recent Orders</h2>
+          <.link navigate={~p"/orders"} class="text-sm text-indigo-600 hover:text-indigo-500 font-medium">
+            View all orders →
+          </.link>
+        </div>
+      </div>
+      
+      <div class="divide-y divide-gray-200">
+        <%= if @recent_orders == [] do %>
+          <div class="p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No orders yet</h3>
+            <p class="mt-1 text-sm text-gray-500">Start shopping to see your orders here.</p>
+            <div class="mt-6">
+              <.link navigate={~p"/browse"} class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                Browse Products
+              </.link>
+            </div>
+          </div>
+        <% else %>
+          <%= for order <- @recent_orders do %>
+            <div class="p-6 hover:bg-gray-50 transition">
+              <div class="flex items-center justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-3">
+                    <p class="text-sm font-semibold text-gray-900">Order #<%= order.order_number %></p>
+                    <span class={["inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", get_status_color(order.status)]}>
+                      <%= String.capitalize(order.status) %>
+                    </span>
+                  </div>
+                  <p class="mt-1 text-sm text-gray-500">
+                    Placed on <%= format_date(order.inserted_at) %>
+                  </p>
+                  <p class="mt-1 text-sm font-medium text-gray-900">
+                    Total: <%= format_currency(order.total) %>
+                  </p>
+                </div>
+                <div class="flex items-center space-x-3">
+                  <%= if order.status in ["pending", "processing"] do %>
+                    <button
+                      phx-click="cancel_order"
+                      phx-value-order_id={order.id}
+                      class="text-sm text-red-600 hover:text-red-500 font-medium"
+                    >
+                      Cancel
+                    </button>
+                  <% end %>
+                  <.link navigate={~p"/orders/#{order.id}"} class="text-sm text-indigo-600 hover:text-indigo-500 font-medium">
+                    View Details
+                  </.link>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

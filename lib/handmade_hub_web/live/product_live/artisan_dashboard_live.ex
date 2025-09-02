@@ -4,29 +4,41 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    if user.role != "artisan" do
-      {:halt, Phoenix.LiveView.redirect(socket, to: "/")}
-    else
-      form = HandmadeHub.Accounts.User.profile_changeset(user, %{}) |> to_form()
-      password_form = HandmadeHub.Accounts.change_user_password(user) |> to_form()
-      {:ok, assign(socket,
-        page: :dashboard,
-        products: [],
-        product_streams: %{},
-        show_modal: false,
-        modal_action: nil,
-        modal_product: nil,
-        show_delete_modal: false,
-        delete_product_id: nil,
-        profile_form: form,
-        password_form: password_form,
-        current_password: nil,
-        trigger_submit: false,
-        show_password_form: false,
-        show_view_modal: false,
-        view_product: nil,
-        sidebar_collapsed: false
-      )}
+    
+    cond do
+      is_nil(user) ->
+        {:ok,
+         socket
+         |> put_flash(:error, "You must be logged in to access this page")
+         |> redirect(to: ~p"/users/log_in")}
+      
+      user.role != "artisan" ->
+        {:ok,
+         socket
+         |> put_flash(:error, "This page is only accessible to artisans")
+         |> redirect(to: ~p"/buyer/dashboard")}
+      
+      true ->
+        form = HandmadeHub.Accounts.User.profile_changeset(user, %{}) |> to_form()
+        password_form = HandmadeHub.Accounts.change_user_password(user) |> to_form()
+        {:ok, assign(socket,
+          page: :dashboard,
+          products: [],
+          product_streams: %{},
+          show_modal: false,
+          modal_action: nil,
+          modal_product: nil,
+          show_delete_modal: false,
+          delete_product_id: nil,
+          profile_form: form,
+          password_form: password_form,
+          current_password: nil,
+          trigger_submit: false,
+          show_password_form: false,
+          show_view_modal: false,
+          view_product: nil,
+          sidebar_collapsed: false
+        )}
     end
   end
 
@@ -144,7 +156,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
   defp handle_profile_upload(_socket, params), do: {:ok, params}
 
   @impl true
-  def handle_info({HandmadeHubWeb.ProductLive.FormComponent, {:saved, product}}, socket) do
+  def handle_info({HandmadeHubWeb.ProductLive.FormComponent, {:saved, _product}}, socket) do
     # Refresh products after save
     products = HandmadeHub.Catalog.list_user_products(socket.assigns.current_user.id)
     product_streams = %{products: Enum.with_index(products) |> Enum.into(%{}, fn {p, i} -> {i, p} end)}
@@ -152,6 +164,12 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
     {:noreply, socket
       |> put_flash(:info, "Product #{action} successfully.")
       |> assign(show_modal: false, modal_action: nil, modal_product: nil, products: products, product_streams: product_streams, page: :products)}
+  end
+
+  @impl true
+  def handle_info({:refresh_images, _product_id}, socket) do
+    products = HandmadeHub.Catalog.list_user_products(socket.assigns.current_user.id)
+    {:noreply, assign(socket, products: products)}
   end
 
   @impl true

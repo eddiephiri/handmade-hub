@@ -29,6 +29,18 @@ defmodule HandmadeHubWeb.ProductLive.FormComponent do
       >
         <.input field={@form[:name]} type="text" label="Name" />
         <.input field={@form[:description]} type="text" label="Description" />
+        <.input field={@form[:category]} type="select" label="Category" 
+          options={[
+            {"Jewelry", "jewelry"},
+            {"Pottery", "pottery"},
+            {"Textiles", "textiles"},
+            {"Woodwork", "woodwork"},
+            {"Metalwork", "metalwork"},
+            {"Paintings", "paintings"},
+            {"Baskets", "baskets"},
+            {"Sculptures", "sculptures"},
+            {"Other", "other"}
+          ]} />
         <.input field={@form[:price]} type="number" label="Price" step="any" />
         <.input field={@form[:quantity]} type="number" label="Quantity" />
         <div class="mt-4">
@@ -36,8 +48,11 @@ defmodule HandmadeHubWeb.ProductLive.FormComponent do
           <.live_file_input upload={@uploads.images} class="mb-2" />
           <div class="flex flex-wrap gap-2 mt-2">
             <%= for entry <- @uploads.images.entries do %>
-              <div class="relative w-24 h-24 border rounded overflow-hidden flex items-center justify-center">
-                <img :if={entry.client_name} src={live_img_preview(entry)} class="object-cover w-full h-full" />
+              <div class="relative w-24 h-24 border rounded overflow-hidden flex items-center justify-center bg-gray-100">
+                <div class="text-center text-gray-500 text-xs">
+                  <div class="mb-1">📷</div>
+                  <div>{entry.client_name}</div>
+                </div>
                 <span class="absolute bottom-1 left-1 bg-white text-xs px-1 rounded">Uploading...</span>
               </div>
             <% end %>
@@ -91,7 +106,8 @@ defmodule HandmadeHubWeb.ProductLive.FormComponent do
 
   @impl true
   def handle_event("validate", %{"product" => product_params}, socket) do
-    changeset = Catalog.change_product(socket.assigns.product, product_params)
+    params = Map.put(product_params, "artisan_id", socket.assigns.current_user.id)
+    changeset = Catalog.change_product(socket.assigns.product, params)
     {:noreply, assign(socket, form: to_form(changeset, action: :validate))}
   end
 
@@ -105,6 +121,9 @@ defmodule HandmadeHubWeb.ProductLive.FormComponent do
 
     case save_product(socket, socket.assigns.action, params) do
       {:ok, product} ->
+        # Process uploaded images
+        _uploaded_files = handle_product_images(socket, product.id)
+
         send(self(), {:refresh_images, product.id})
         notify_parent({:saved, product})
         {:noreply,
@@ -113,6 +132,43 @@ defmodule HandmadeHubWeb.ProductLive.FormComponent do
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
+  end
+
+  defp handle_product_images(socket, product_id) do
+    # Ensure uploads directory exists
+    uploads_dir = "priv/static/uploads/products"
+    File.mkdir_p!(uploads_dir)
+
+    # Process each uploaded image using consume_uploaded_entries
+    uploaded_files =
+      consume_uploaded_entries(socket, :images, fn %{path: path}, entry ->
+        # Generate unique filename
+        ext = Path.extname(entry.client_name)
+        filename = "#{Ecto.UUID.generate()}#{ext}"
+        dest_path = Path.join(uploads_dir, filename)
+
+        # Copy file to uploads directory
+        File.cp!(path, dest_path)
+
+        # Return the URL for the uploaded file
+        {:ok, "/uploads/products/#{filename}"}
+      end)
+
+    # Create product image records
+    uploaded_files
+    |> Enum.with_index(1)
+    |> Enum.map(fn {image_url, index} ->
+      is_primary = index == 1  # First image is primary
+      case Catalog.create_product_image(%{
+        product_id: product_id,
+        image_url: image_url,
+        is_primary: is_primary
+      }) do
+        {:ok, image} -> image
+        {:error, _} -> nil
+      end
+    end)
+    |> Enum.reject(&is_nil/1)
   end
 
   def handle_event("set_primary_image", %{"id" => image_id, "product_id" => product_id}, socket) do
@@ -133,7 +189,7 @@ defmodule HandmadeHubWeb.ProductLive.FormComponent do
     Catalog.update_product(socket.assigns.product, product_params)
   end
 
-  defp save_product(socket, :new, product_params) do
+  defp save_product(_socket, :new, product_params) do
     Catalog.create_product(product_params)
   end
 

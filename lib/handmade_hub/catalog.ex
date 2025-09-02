@@ -27,22 +27,24 @@ defmodule HandmadeHub.Catalog do
   Returns the list of products for a given user.
   """
   def list_user_products(user_id) do
-    Repo.all(from p in Product, where: p.artisan_id == ^user_id)
+    Repo.all(
+      from p in Product,
+      where: p.artisan_id == ^user_id,
+      preload: [:artisan, :product_images], # Make sure to preload product_images
+      order_by: [desc: p.inserted_at]
+    )
   end
 
   @doc """
   List all products with artisan info (for public browsing)
   """
   def list_all_products_with_artisans do
-    query = from p in Product,
-      join: a in User, on: p.artisan_id == a.id,
-      where: p.quantity > 0,
-      preload: [:product_images],
-      select: %{p | artisan: a},
-      order_by: [desc: p.inserted_at]
-
-    Repo.all(query)
-    |> Enum.filter(& &1.artisan)
+    Repo.all(
+      from p in Product,
+      join: a in assoc(p, :artisan),
+      preload: [:artisan, :product_images], # Make sure to preload product_images
+      select: p
+    )
   end
 
   @doc """
@@ -59,7 +61,10 @@ defmodule HandmadeHub.Catalog do
       ** (Ecto.NoResultsError)
 
   """
-  def get_product!(id), do: Repo.get!(Product, id)
+  def get_product!(id) do
+    Repo.get!(Product, id)
+    |> Repo.preload([:artisan, :product_images]) # Preload images here too
+  end
 
   @doc """
   Get single product with artisan info
@@ -149,6 +154,8 @@ defmodule HandmadeHub.Catalog do
     |> ProductImage.changeset(attrs)
     |> Repo.insert()
   end
+
+  def list_product_images(nil), do: []
 
   def list_product_images(product_id) do
     Repo.all(from i in ProductImage, where: i.product_id == ^product_id, order_by: [desc: i.is_primary, asc: i.inserted_at])

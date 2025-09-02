@@ -1,0 +1,193 @@
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-gray-900">My Orders</h1>
+    <p class="mt-2 text-gray-600">Track and manage all your orders</p>
+  </div>
+
+  <!-- Filter Tabs -->
+  <div class="mb-6 border-b border-gray-200">
+    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+      <button
+        phx-click="filter_orders"
+        phx-value-status="all"
+        class={[
+          "py-2 px-1 border-b-2 font-medium text-sm",
+          @filter_status == "all" && "border-indigo-500 text-indigo-600",
+          @filter_status != "all" && "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+        ]}
+      >
+        All Orders
+      </button>
+      <button
+        phx-click="filter_orders"
+        phx-value-status="pending"
+        class={[
+          "py-2 px-1 border-b-2 font-medium text-sm",
+          @filter_status == "pending" && "border-indigo-500 text-indigo-600",
+          @filter_status != "pending" && "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+        ]}
+      >
+        Pending
+      </button>
+      <button
+        phx-click="filter_orders"
+        phx-value-status="processing"
+        class={[
+          "py-2 px-1 border-b-2 font-medium text-sm",
+          @filter_status == "processing" && "border-indigo-500 text-indigo-600",
+          @filter_status != "processing" && "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+        ]}
+      >
+        Processing
+      </button>
+      <button
+        phx-click="filter_orders"
+        phx-value-status="shipped"
+        class={[
+          "py-2 px-1 border-b-2 font-medium text-sm",
+          @filter_status == "shipped" && "border-indigo-500 text-indigo-600",
+          @filter_status != "shipped" && "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+        ]}
+      >
+        Shipped
+      </button>
+      <button
+        phx-click="filter_orders"
+        phx-value-status="delivered"
+        class={[
+          "py-2 px-1 border-b-2 font-medium text-sm",
+          @filter_status == "delivered" && "border-indigo-500 text-indigo-600",
+          @filter_status != "delivered" && "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+        ]}
+      >
+        Delivered
+      </button>
+    </nav>
+  </div>
+
+  <!-- Orders List -->
+  <%= if @orders == [] do %>
+    <div class="text-center py-12">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
+      <p class="mt-1 text-sm text-gray-500">
+        <%= if @filter_status == "all" do %>
+          You haven't placed any orders yet.
+        <% else %>
+          No orders with status "<%= @filter_status %>".
+        <% end %>
+      </p>
+      <div class="mt-6">
+        <.link navigate={~p"/browse"} class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+          Start Shopping
+        </.link>
+      </div>
+    </div>
+  <% else %>
+    <div class="space-y-4">
+      <%= for order <- @orders do %>
+        <div class="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
+          <!-- Order Header -->
+          <div class="bg-gray-50 px-6 py-4">
+            <div class="flex flex-wrap items-center justify-between">
+              <div class="flex items-center space-x-6">
+                <div>
+                  <p class="text-xs text-gray-500">Order Number</p>
+                  <p class="text-sm font-semibold text-gray-900"><%= order.order_number %></p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Date Placed</p>
+                  <p class="text-sm text-gray-900"><%= format_date(order.inserted_at) %></p>
+                </div>
+                <div>
+                  <p class="text-xs text-gray-500">Total Amount</p>
+                  <p class="text-sm font-semibold text-gray-900"><%= format_price(order.total) %></p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+                <span class={["inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", get_status_color(order.status)]}>
+                  <%= String.capitalize(order.status) %>
+                </span>
+                <span class={["inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", get_payment_status_color(order.payment_status)]}>
+                  Payment: <%= String.capitalize(order.payment_status) %>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Items Preview -->
+          <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-gray-600">
+                  <%= length(order.order_items) %> item<%= if length(order.order_items) != 1, do: "s" %>
+                </p>
+                <div class="mt-2 flex -space-x-2">
+                  <%= for {item, index} <- Enum.with_index(order.order_items) |> Enum.take(4) do %>
+                    <div class="relative inline-block">
+                      <div class="h-10 w-10 rounded-full bg-gray-200 border-2 border-white flex items-center justify-center">
+                        <span class="text-xs text-gray-600"><%= item.quantity %>x</span>
+                      </div>
+                      <%= if index == 3 && length(order.order_items) > 4 do %>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                          <span class="text-xs text-gray-600">+<%= length(order.order_items) - 4 %></span>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+              <div class="text-right">
+                <.link navigate={~p"/orders/#{order.id}"} class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                  View Details
+                  <svg class="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                  </svg>
+                </.link>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order Progress (for active orders) -->
+          <%= if order.status in ["pending", "processing", "shipped"] do %>
+            <div class="px-6 pb-4">
+              <div class="relative">
+                <div class="overflow-hidden h-2 text-xs flex rounded bg-gray-200">
+                  <div style={"width: #{get_progress_percentage(order.status)}%"} class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-500"></div>
+                </div>
+                <div class="flex justify-between mt-2">
+                  <span class={["text-xs", order.status in ["pending", "processing", "shipped", "delivered"] && "text-indigo-600 font-semibold" || "text-gray-400"]}>
+                    Order Placed
+                  </span>
+                  <span class={["text-xs", order.status in ["processing", "shipped", "delivered"] && "text-indigo-600 font-semibold" || "text-gray-400"]}>
+                    Processing
+                  </span>
+                  <span class={["text-xs", order.status in ["shipped", "delivered"] && "text-indigo-600 font-semibold" || "text-gray-400"]}>
+                    Shipped
+                  </span>
+                  <span class={["text-xs", order.status == "delivered" && "text-indigo-600 font-semibold" || "text-gray-400"]}>
+                    Delivered
+                  </span>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  function get_progress_percentage(status) {
+    switch(status) {
+      case 'pending': return '25';
+      case 'processing': return '50';
+      case 'shipped': return '75';
+      case 'delivered': return '100';
+      default: return '0';
+    }
+  }
+</script>
