@@ -1,5 +1,7 @@
 defmodule HandmadeHubWeb.ArtisanDashboardLive do
   use HandmadeHubWeb, :live_view
+  alias HandmadeHub.ArtisanOrders
+  alias HandmadeHub.Catalog
 
   @impl true
   def mount(_params, _session, socket) do
@@ -37,7 +39,28 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
           show_password_form: false,
           show_view_modal: false,
           view_product: nil,
-          sidebar_collapsed: false
+          sidebar_collapsed: false,
+          # Orders related assigns
+          orders: [],
+          order_stats: %{
+            total_orders: 0,
+            total_revenue: Decimal.new(0),
+            pending_orders: 0,
+            processing_orders: 0,
+            completed_orders: 0,
+            items_sold: 0,
+            best_sellers: [],
+            monthly_trend: []
+          },
+          selected_order: nil,
+          show_order_modal: false,
+          order_filters: %{
+            search: "",
+            status: "",
+            payment_status: ""
+          },
+          stats_period: :this_month,
+          show_print_modal: false
         )}
     end
   end
@@ -146,6 +169,89 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
 
   def handle_event("close_view_modal", _params, socket) do
     {:noreply, assign(socket, show_view_modal: false, view_product: nil)}
+  end
+
+  # Orders event handlers
+  def handle_event("show_orders", _params, socket) do
+    user_id = socket.assigns.current_user.id
+    orders = ArtisanOrders.list_artisan_orders(user_id)
+    stats = ArtisanOrders.get_artisan_stats(user_id, socket.assigns.stats_period)
+    
+    {:noreply, assign(socket, 
+      page: :orders, 
+      orders: orders, 
+      order_stats: stats,
+      order_filters: %{
+        search: "",
+        status: "",
+        payment_status: ""
+      }
+    )}
+  end
+
+  def handle_event("filter_orders", params, socket) do
+    user_id = socket.assigns.current_user.id
+    filters = Map.take(params, ["search", "status", "payment_status"])
+              |> Enum.filter(fn {_k, v} -> v != "" end)
+              |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
+    
+    filtered_orders = ArtisanOrders.list_artisan_orders(user_id, filters)
+    {:noreply, assign(socket, orders: filtered_orders, order_filters: filters)}
+  end
+
+  def handle_event("view_order", %{"order-id" => order_id}, socket) do
+    user_id = socket.assigns.current_user.id
+    order = ArtisanOrders.get_artisan_order!(user_id, order_id)
+    artisan_items = ArtisanOrders.get_artisan_order_items(user_id, order_id)
+    
+    {:noreply, assign(socket, 
+      show_order_modal: true, 
+      selected_order: Map.put(order, :artisan_items, artisan_items)
+    )}
+  end
+
+  def handle_event("close_order_modal", _params, socket) do
+    {:noreply, assign(socket, show_order_modal: false, selected_order: nil)}
+  end
+
+  def handle_event("filter_stats_period", %{"stats_period" => period}, socket) do
+    user_id = socket.assigns.current_user.id
+    period_atom = case period do
+      "today" -> :today
+      "week" -> :this_week
+      "month" -> :this_month
+      "year" -> :this_year
+      "all" -> :all_time
+      _ -> :this_month
+    end
+    
+    stats = ArtisanOrders.get_artisan_stats(user_id, period_atom)
+    {:noreply, assign(socket, stats_period: period_atom, order_stats: stats)}
+  end
+
+  def handle_event("update_order_status", %{"order_id" => order_id, "status" => status}, socket) do
+    user_id = socket.assigns.current_user.id
+    
+    case ArtisanOrders.update_artisan_order_status(user_id, order_id, status) do
+      {:ok, _order} ->
+        orders = ArtisanOrders.list_artisan_orders(user_id, socket.assigns.order_filters)
+        stats = ArtisanOrders.get_artisan_stats(user_id, socket.assigns.stats_period)
+        
+        {:noreply, socket
+         |> put_flash(:info, "Order status updated successfully")
+         |> assign(orders: orders, order_stats: stats, show_order_modal: false, selected_order: nil)}
+      
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event("print_report", _params, socket) do
+    {:noreply, assign(socket, show_print_modal: true)}
+  end
+
+  def handle_event("close_print_modal", _params, socket) do
+    {:noreply, assign(socket, show_print_modal: false)}
   end
 
   defp handle_profile_upload(_socket, %{"profile_image" => %Phoenix.LiveView.UploadEntry{} = upload} = params) do
@@ -282,16 +388,19 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
               </button>
 
               <!-- Orders -->
-              <.link
-                navigate="#"
-                class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              <button
+                phx-click="show_orders"
+                class={[
+                  "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+                  @page == :orders && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                ]}
               >
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <span class={["ml-3 font-medium", @sidebar_collapsed && "hidden"]}>Orders</span>
-                <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity", @sidebar_collapsed && "hidden"]}></div>
-              </.link>
+                <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity", @page == :orders && "opacity-100", @sidebar_collapsed && "hidden"]}></div>
+              </button>
 
               <!-- Messages -->
               <.link
@@ -688,6 +797,348 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                 <% end %>
               </div>
             </.modal>
+          <% end %>
+
+          <!-- Orders Page -->
+          <%= if @page == :orders do %>
+            <div class="space-y-8">
+              <!-- Orders Header with Stats Period Selector -->
+              <div class="flex justify-between items-center">
+                <div>
+                  <h1 class="text-3xl font-bold text-gray-900">Orders Management</h1>
+                  <p class="text-gray-600 mt-1">Track and manage your product orders</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                  <select 
+                    phx-change="filter_stats_period"
+                    name="stats_period"
+                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="today" selected={@stats_period == "today"}>Today</option>
+                    <option value="week" selected={@stats_period == "week"}>This Week</option>
+                    <option value="month" selected={@stats_period == "month"}>This Month</option>
+                    <option value="year" selected={@stats_period == "year"}>This Year</option>
+                    <option value="all" selected={@stats_period == "all"}>All Time</option>
+                  </select>
+                  <button
+                    phx-click="print_report"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                  >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Print Report</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Statistics Cards -->
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Total Orders Card -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-gray-600">Total Orders</p>
+                      <p class="text-3xl font-bold text-gray-900 mt-2"><%= @order_stats.total_orders %></p>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                      <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Revenue Card -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-gray-600">Total Revenue</p>
+                      <p class="text-3xl font-bold text-green-600 mt-2">K<%= :erlang.float_to_binary(Decimal.to_float(@order_stats.total_revenue || Decimal.new(0)), decimals: 2) %></p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-lg">
+                      <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Pending Orders Card -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-gray-600">Pending Orders</p>
+                      <p class="text-3xl font-bold text-yellow-600 mt-2"><%= @order_stats.pending_orders %></p>
+                    </div>
+                    <div class="p-3 bg-yellow-100 rounded-lg">
+                      <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Completed Orders Card -->
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-gray-600">Completed Orders</p>
+                      <p class="text-3xl font-bold text-purple-600 mt-2"><%= @order_stats.completed_orders %></p>
+                    </div>
+                    <div class="p-3 bg-purple-100 rounded-lg">
+                      <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Best Sellers Section -->
+              <%= if @order_stats.best_sellers && length(@order_stats.best_sellers) > 0 do %>
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <h3 class="text-lg font-semibold text-gray-900 mb-4">Best Selling Products</h3>
+                  <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <%= for product <- Enum.take(@order_stats.best_sellers, 5) do %>
+                      <div class="text-center">
+                        <p class="font-medium text-gray-900 truncate"><%= product.product_name %></p>
+                        <p class="text-2xl font-bold text-blue-600"><%= product.quantity_sold %></p>
+                        <p class="text-sm text-gray-500">units sold</p>
+                      </div>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+
+              <!-- Orders Filter Section -->
+              <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <div class="flex flex-wrap gap-4 items-end">
+                  <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+                    <input
+                      type="text"
+                      phx-change="filter_orders"
+                      phx-debounce="300"
+                      name="search"
+                      value={Map.get(@order_filters, :search, "")}
+                      placeholder="Order #, customer name..."
+                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select
+                      phx-change="filter_orders"
+                      name="status"
+                      class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All Status</option>
+                      <option value="pending" selected={Map.get(@order_filters, :status) == "pending"}>Pending</option>
+                      <option value="processing" selected={Map.get(@order_filters, :status) == "processing"}>Processing</option>
+                      <option value="shipped" selected={Map.get(@order_filters, :status) == "shipped"}>Shipped</option>
+                      <option value="delivered" selected={Map.get(@order_filters, :status) == "delivered"}>Delivered</option>
+                      <option value="cancelled" selected={Map.get(@order_filters, :status) == "cancelled"}>Cancelled</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment</label>
+                    <select
+                      phx-change="filter_orders"
+                      name="payment_status"
+                      class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">All Payments</option>
+                      <option value="paid" selected={Map.get(@order_filters, :payment_status) == "paid"}>Paid</option>
+                      <option value="pending" selected={Map.get(@order_filters, :payment_status) == "pending"}>Pending</option>
+                      <option value="failed" selected={Map.get(@order_filters, :payment_status) == "failed"}>Failed</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Orders Table -->
+              <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Order #
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Customer
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Payment
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                      <%= if @orders && length(@orders) > 0 do %>
+                        <%= for order <- @orders do %>
+                          <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              <%= order.order_number %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <%= order.customer_name || "N/A" %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <%= Calendar.strftime(order.inserted_at, "%b %d, %Y") %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                              <span class={[
+                                "px-2 inline-flex text-xs leading-5 font-semibold rounded-full",
+                                order.status == "pending" && "bg-yellow-100 text-yellow-800",
+                                order.status == "processing" && "bg-blue-100 text-blue-800",
+                                order.status == "shipped" && "bg-purple-100 text-purple-800",
+                                order.status == "delivered" && "bg-green-100 text-green-800",
+                                order.status == "cancelled" && "bg-red-100 text-red-800"
+                              ]}>
+                                <%= String.capitalize(order.status) %>
+                              </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                              <span class={[
+                                "px-2 inline-flex text-xs leading-5 font-semibold rounded-full",
+                                order.payment_status == "paid" && "bg-green-100 text-green-800",
+                                order.payment_status == "pending" && "bg-yellow-100 text-yellow-800",
+                                order.payment_status == "failed" && "bg-red-100 text-red-800"
+                              ]}>
+                                <%= String.capitalize(order.payment_status) %>
+                              </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                              K<%= :erlang.float_to_binary(Decimal.to_float(order.total || Decimal.new(0)), decimals: 2) %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <button
+                                phx-click="view_order"
+                                phx-value-order-id={order.id}
+                                class="text-blue-600 hover:text-blue-900 mr-3"
+                              >
+                                View
+                              </button>
+                              <button
+                                phx-click="update_order_status"
+                                phx-value-order-id={order.id}
+                                class="text-green-600 hover:text-green-900"
+                              >
+                                Update
+                              </button>
+                            </td>
+                          </tr>
+                        <% end %>
+                      <% else %>
+                        <tr>
+                          <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                            <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <p class="text-lg font-medium">No orders found</p>
+                            <p class="text-sm text-gray-400 mt-1">Orders for your products will appear here</p>
+                          </td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Order Details Modal -->
+              <%= if @show_order_modal && @selected_order do %>
+                <.modal id="order-details-modal" show on_cancel={JS.push("close_order_modal")}>
+                  <div class="p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Order Details</h3>
+                    <div class="space-y-4">
+                      <div class="grid grid-cols-2 gap-4">
+                        <div>
+                          <p class="text-sm text-gray-500">Order Number</p>
+                          <p class="font-medium"><%= @selected_order.order_number %></p>
+                        </div>
+                        <div>
+                          <p class="text-sm text-gray-500">Date</p>
+                          <p class="font-medium"><%= Calendar.strftime(@selected_order.inserted_at, "%B %d, %Y") %></p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <p class="text-sm text-gray-500 mb-2">Items</p>
+                        <div class="border rounded-lg p-4 space-y-2">
+                          <%= for item <- @selected_order.order_items do %>
+                            <div class="flex justify-between">
+                              <span><%= item.product.name %> x <%= item.quantity %></span>
+                              <span class="font-medium">K<%= :erlang.float_to_binary(Decimal.to_float(item.subtotal || Decimal.new(0)), decimals: 2) %></span>
+                            </div>
+                          <% end %>
+                        </div>
+                      </div>
+                      
+                      <div class="border-t pt-4">
+                        <div class="flex justify-between font-semibold">
+                          <span>Total</span>
+                          <span>K<%= :erlang.float_to_binary(Decimal.to_float(@selected_order.total || Decimal.new(0)), decimals: 2) %></span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </.modal>
+              <% end %>
+
+              <!-- Print Report Modal -->
+              <%= if @show_print_modal do %>
+                <.modal id="print-report-modal" show on_cancel={JS.push("close_print_modal")}>
+                  <div class="p-6" id="print-content">
+                    <style type="text/css" media="print">
+                      @media print {
+                        body * { visibility: hidden; }
+                        #print-content, #print-content * { visibility: visible; }
+                        #print-content { position: absolute; left: 0; top: 0; }
+                      }
+                    </style>
+                    
+                    <div class="text-center mb-6">
+                      <h2 class="text-2xl font-bold">Order Report</h2>
+                      <p class="text-gray-600">Period: <%= @stats_period %></p>
+                      <p class="text-gray-600">Generated: <%= Calendar.strftime(DateTime.utc_now(), "%B %d, %Y") %></p>
+                    </div>
+                    
+                    <div class="space-y-6">
+                      <div class="grid grid-cols-2 gap-4">
+                        <div class="border rounded p-4">
+                          <p class="text-sm text-gray-500">Total Orders</p>
+                          <p class="text-2xl font-bold"><%= @order_stats.total_orders %></p>
+                        </div>
+                        <div class="border rounded p-4">
+                          <p class="text-sm text-gray-500">Total Revenue</p>
+                          <p class="text-2xl font-bold">K<%= :erlang.float_to_binary(Decimal.to_float(@order_stats.total_revenue || Decimal.new(0)), decimals: 2) %></p>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onclick="window.print()"
+                        class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Print Report
+                      </button>
+                    </div>
+                  </div>
+                </.modal>
+              <% end %>
+            </div>
           <% end %>
         </div>
       </main>
