@@ -61,6 +61,14 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Quantum scheduler config
+config :handmade_hub, HandmadeHub.Scheduler,
+  timezone: :utc,
+  jobs: [
+    # Every minute, attempt to dispatch pending emails
+    {"* * * * *", {HandmadeHub.Notifications, :dispatch_pending_emails, []}}
+  ]
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

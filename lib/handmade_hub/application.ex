@@ -14,6 +14,8 @@ defmodule HandmadeHub.Application do
       {Phoenix.PubSub, name: HandmadeHub.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: HandmadeHub.Finch},
+      # Scheduler for background jobs
+      HandmadeHub.Scheduler,
       # Start a worker by calling: HandmadeHub.Worker.start_link(arg)
       # {HandmadeHub.Worker, arg},
       # Start to serve requests, typically the last entry
