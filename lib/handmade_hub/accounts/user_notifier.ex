@@ -2,6 +2,7 @@ defmodule HandmadeHub.Accounts.UserNotifier do
   import Swoosh.Email
 
   alias HandmadeHub.Mailer
+  alias HandmadeHub.Notifications
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
@@ -12,8 +13,22 @@ defmodule HandmadeHub.Accounts.UserNotifier do
       |> subject(subject)
       |> text_body(body)
 
-    with {:ok, _metadata} <- Mailer.deliver(email) do
-      {:ok, email}
+    case Mailer.deliver(email) do
+      {:ok, _metadata} ->
+        {:ok, email}
+
+      {:error, reason} ->
+        # Fallback: enqueue for later delivery
+        _ =
+          Notifications.enqueue_email(%{
+            to: recipient,
+            subject: subject,
+            text_body: body,
+            type: "user_notification",
+            scheduled_at: DateTime.utc_now() |> DateTime.truncate(:second)
+          })
+
+        {:error, reason}
     end
   end
 
