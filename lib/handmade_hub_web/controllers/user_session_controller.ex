@@ -22,9 +22,17 @@ defmodule HandmadeHubWeb.UserSessionController do
     %{"email" => email, "password" => password} = user_params
 
     if user = Accounts.get_user_by_email_and_password(email, password) do
-      conn
-      |> put_flash(:info, info)
-      |> UserAuth.log_in_user(user, user_params)
+      if is_nil(user.confirmed_at) do
+        # Block login until email is confirmed
+        conn
+        |> put_flash(:error, "Your account is not confirmed. Check your email for confirmation instructions or request a new one.")
+        |> put_flash(:email, String.slice(email, 0, 160))
+        |> redirect(to: ~p"/users/confirm")
+      else
+        conn
+        |> put_flash(:info, info)
+        |> UserAuth.log_in_user(user, user_params)
+      end
     else
       # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
       conn
