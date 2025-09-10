@@ -1,5 +1,6 @@
 defmodule HandmadeHubWeb.OrderLive.Show do
   use HandmadeHubWeb, :live_view
+  import HandmadeHubWeb.FormatHelpers
 
   alias HandmadeHub.Orders
   alias HandmadeHub.Catalog
@@ -8,13 +9,14 @@ defmodule HandmadeHubWeb.OrderLive.Show do
   def mount(%{"id" => id}, _session, socket) do
     if socket.assigns.current_user do
       order = Orders.get_order!(id)
-      
+
       # Verify the order belongs to the current user
       if order.user_id == socket.assigns.current_user.id do
         {:ok,
          socket
          |> assign(:page_title, "Order ##{order.order_number}")
          |> assign(:order, order)
+         |> assign(:show_artisan_sidebar, true)
          |> load_order_items_with_products(order)}
       else
         {:ok,
@@ -35,7 +37,7 @@ defmodule HandmadeHubWeb.OrderLive.Show do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
   end
 
-  defp apply_action(socket, :show, %{"id" => id}) do
+  defp apply_action(socket, :show, %{"id" => _id}) do
     socket
     |> assign(:page_title, "Order Details")
   end
@@ -48,7 +50,7 @@ defmodule HandmadeHubWeb.OrderLive.Show do
          socket
          |> assign(:order, order)
          |> put_flash(:info, "Order has been cancelled successfully")}
-      
+
       {:error, message} ->
         {:noreply, put_flash(socket, :error, message)}
     end
@@ -63,12 +65,12 @@ defmodule HandmadeHubWeb.OrderLive.Show do
 
   defp load_order_items_with_products(socket, order) do
     # Load product details for each order item
-    order_items_with_products = 
+    order_items_with_products =
       Enum.map(order.order_items, fn item ->
         product = Catalog.get_product!(item.product_id)
         Map.put(item, :product, product)
       end)
-    
+
     assign(socket, :order_items_with_products, order_items_with_products)
   end
 

@@ -2,6 +2,7 @@ defmodule HandmadeHubWeb.Router do
   use HandmadeHubWeb, :router
 
   import HandmadeHubWeb.UserAuth
+  import HandmadeHubWeb.AdminAuth
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -10,11 +11,25 @@ defmodule HandmadeHubWeb.Router do
     plug :put_root_layout, html: {HandmadeHubWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug HandmadeHubWeb.MaintenancePlug
     plug :fetch_current_user
   end
 
   pipeline :api do
     plug :accepts, ["json"]
+  end
+
+  # Admin pipelines (namespaced to avoid naming conflicts with imported plugs)
+  pipeline :admin_fetch_current do
+    plug :fetch_current_admin
+  end
+
+  pipeline :admin_redirect_if_authenticated do
+    plug :redirect_if_admin_is_authenticated
+  end
+
+  pipeline :admin_require_authenticated do
+    plug :require_authenticated_admin
   end
 
   scope "/", HandmadeHubWeb do
@@ -28,6 +43,8 @@ defmodule HandmadeHubWeb.Router do
       layout: {HandmadeHubWeb.Layouts, :app} do
       live "/browse", BrowseLive.Index, :index
       live "/browse/:id", BrowseLive.Show, :show
+      live "/artisans/:id", ArtisanProfileLive, :show
+      live "/favorites", FavoritesLive, :index
       live "/cart", CartLive, :index
     end
   end
@@ -60,7 +77,8 @@ defmodule HandmadeHubWeb.Router do
     pipe_through [:browser, :redirect_if_user_is_authenticated]
 
     live_session :redirect_if_user_is_authenticated,
-      on_mount: [{HandmadeHubWeb.UserAuth, :redirect_if_user_is_authenticated}] do
+      on_mount: [{HandmadeHubWeb.UserAuth, :redirect_if_user_is_authenticated}],
+      layout: {HandmadeHubWeb.Layouts, :auth} do
       live "/users/register", UserRegistrationLive, :new
       live "/users/log_in", UserLoginLive, :new
       live "/users/reset_password", UserForgotPasswordLive, :new
@@ -74,7 +92,8 @@ defmodule HandmadeHubWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{HandmadeHubWeb.UserAuth, :ensure_authenticated}] do
+      on_mount: [{HandmadeHubWeb.UserAuth, :ensure_authenticated}],
+      layout: {HandmadeHubWeb.Layouts, :app} do
       live "/users/settings", UserSettingsLive, :edit
       live "/users/settings/confirm_email/:token", UserSettingsLive, :confirm_email
       live "/users/settings/profile", UserProfileLive
@@ -88,25 +107,67 @@ defmodule HandmadeHubWeb.Router do
 
       # Artisan dashboard route (restricted to artisans only)
       live "/artisan/dashboard", ArtisanDashboardLive, :index
-      
+
       # Order management routes for users
       live "/orders", OrderLive.Index, :index
       live "/orders/:id", OrderLive.Show, :show
-      
+      live "/messages", MessagesLive, :index
+
       # Buyer dashboard route
       live "/buyer/dashboard", BuyerDashboardLive, :index
+
+      # Checkout routes
+      live "/checkout", CheckoutLive, :index
     end
   end
 
   scope "/", HandmadeHubWeb do
     pipe_through [:browser]
-
     delete "/users/log_out", UserSessionController, :delete
+  end
 
-    live_session :current_user,
-      on_mount: [{HandmadeHubWeb.UserAuth, :mount_current_user}] do
-      live "/users/confirm/:token", UserConfirmationLive, :edit
-      live "/users/confirm", UserConfirmationInstructionsLive, :new
+  scope "/", HandmadeHubWeb do
+    pipe_through [:browser]
+
+    # Payment return page (no auth required; user returns from provider)
+    live "/checkout/return", CheckoutReturnLive, :index
+  end
+
+  # Admin routes
+  scope "/admin", HandmadeHubWeb do
+    pipe_through [:browser, :admin_fetch_current]
+  end
+
+  scope "/admin", HandmadeHubWeb do
+    pipe_through [:browser, :admin_redirect_if_authenticated]
+
+    get "/log_in", AdminSessionController, :new
+    post "/log_in", AdminSessionController, :create
+  end
+
+  scope "/admin", HandmadeHubWeb do
+    pipe_through [:browser, :admin_fetch_current, :admin_require_authenticated]
+
+    delete "/log_out", AdminSessionController, :delete
+
+    live_session :require_authenticated_admin,
+      on_mount: [{HandmadeHubWeb.AdminAuth, :ensure_authenticated_admin}, {HandmadeHubWeb.AdminNav, :nav}],
+      layout: {HandmadeHubWeb.Layouts, :admin},
+      root_layout: {HandmadeHubWeb.Layouts, :root} do
+      live "/dashboard", Admin.DashboardLive, :index
+      live "/artisans", Admin.ArtisansLive, :index
+      live "/artisans/:id", Admin.ArtisanShowLive, :show
+      live "/buyers", Admin.BuyersLive, :index
+      live "/buyers/:id", Admin.BuyerShowLive, :show
+      live "/admins", Admin.AdminsLive, :index
+      live "/admins/:id", Admin.AdminShowLive, :show
+      live "/products", Admin.ProductsLive, :index
+      live "/products/:id", Admin.ProductShowLive, :show
+      live "/orders", Admin.OrdersLive, :index
+      live "/reviews", Admin.ReviewsLive, :index
+      live "/analytics", Admin.AnalyticsLive, :index
+      get "/reports/orders.csv", AdminReportsController, :export_orders_csv
+      live "/settings", Admin.SettingsLive, :index
     end
   end
 end

@@ -9,6 +9,14 @@ defmodule HandmadeHubWeb.UserProfileLive do
 
     form = to_form(User.profile_changeset(user, %{}))
 
+    socket =
+      socket
+      |> allow_upload(:profile_image,
+        accept: ~w(.jpg .jpeg .png .gif),
+        max_entries: 1,
+        max_file_size: 5_000_000
+      )
+
     {:ok, assign(socket, form: form, uploaded_files: [], page_title: "Edit Profile")}
   end
 
@@ -32,11 +40,21 @@ defmodule HandmadeHubWeb.UserProfileLive do
     end
   end
 
-  defp handle_upload(_socket, %{"profile_image" => %Phoenix.LiveView.UploadEntry{} = upload} = params) do
-    upload_path = Path.join(["priv/static/uploads/profile_images", upload.client_name])
-    File.cp(upload.path, upload_path)
-    {:ok, Map.put(params, "profile_image", "/uploads/profile_images/#{upload.client_name}")}
-  end
+  defp handle_upload(socket, params) do
+    uploads_dir = "priv/static/uploads/profile_images"
+    File.mkdir_p!(uploads_dir)
 
-  defp handle_upload(_socket, params), do: {:ok, params}
+    uploaded_urls = consume_uploaded_entries(socket, :profile_image, fn %{path: path}, entry ->
+      ext = Path.extname(entry.client_name)
+      filename = "#{Ecto.UUID.generate()}#{ext}"
+      dest_path = Path.join(uploads_dir, filename)
+      File.cp!(path, dest_path)
+      {:ok, "/uploads/profile_images/#{filename}"}
+    end)
+
+    case uploaded_urls do
+      [url | _] -> {:ok, Map.put(params, "profile_image", url)}
+      _ -> {:ok, params}
+    end
+  end
 end

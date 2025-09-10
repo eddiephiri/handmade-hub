@@ -1,0 +1,30 @@
+<div>
+  <.header class="text-center">
+    Admin Login
+    <:subtitle>
+      Need help?
+      <.link href={~p"/users/log_in"} class="font-semibold text-indigo-600 hover:text-indigo-500 hover:underline">
+        User Login
+      </.link>
+      or contact system administrator.
+    </:subtitle>
+  </.header>
+
+  <.simple_form for={@form} id="admin_login_form" action={~p"/admin/log_in"} phx-update="ignore">
+    <.input field={@form[:email]} type="email" label="Email" required />
+    <.input field={@form[:password]} type="password" label="Password" required />
+
+    <:actions>
+      <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
+      <.link href={~p"/users/reset_password"} class="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+        Forgot your password?
+      </.link>
+    </:actions>
+    <:actions>
+      <.button phx-disable-with="Logging in..." class="w-full">
+        Log in <span aria-hidden="true">→</span>
+      </.button>
+    </:actions>
+  </.simple_form>
+</div>
+

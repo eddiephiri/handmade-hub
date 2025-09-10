@@ -1,0 +1,36 @@
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-6">Analytics</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white border rounded p-4"><div class="text-sm text-gray-500">Users</div><div class="text-2xl font-semibold"><%= @total_users %></div></div>
+    <div class="bg-white border rounded p-4"><div class="text-sm text-gray-500">Artisans</div><div class="text-2xl font-semibold"><%= @total_artisans %></div></div>
+    <div class="bg-white border rounded p-4"><div class="text-sm text-gray-500">Buyers</div><div class="text-2xl font-semibold"><%= @total_buyers %></div></div>
+    <div class="bg-white border rounded p-4"><div class="text-sm text-gray-500">Products</div><div class="text-2xl font-semibold"><%= @total_products %></div></div>
+  </div>
+
+  <div class="bg-white border rounded p-4">
+    <h2 class="font-semibold mb-3">Monthly Orders & Revenue</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-50 text-left">
+            <th class="p-3">Month</th>
+            <th class="p-3">Orders</th>
+            <th class="p-3">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for row <- @series do %>
+            <tr class="border-t">
+              <td class="p-3"><%= row.period %></td>
+              <td class="p-3"><%= row.count %></td>
+              <td class="p-3"><%= HandmadeHubWeb.FormatHelpers.format_currency(row.revenue) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+

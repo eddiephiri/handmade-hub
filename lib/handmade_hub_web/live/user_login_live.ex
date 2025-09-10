@@ -3,12 +3,12 @@ defmodule HandmadeHubWeb.UserLoginLive do
 
   def render(assigns) do
     ~H"""
-    <div class="mx-auto max-w-sm">
+    <div>
       <.header class="text-center">
         Log in to account
         <:subtitle>
           Don't have an account?
-          <.link navigate={~p"/users/register"} class="font-semibold text-brand hover:underline">
+          <.link navigate={~p"/users/register"} class="font-semibold text-indigo-600 hover:text-indigo-500 hover:underline">
             Sign up
           </.link>
           for an account now.
@@ -21,7 +21,7 @@ defmodule HandmadeHubWeb.UserLoginLive do
 
         <:actions>
           <.input field={@form[:remember_me]} type="checkbox" label="Keep me logged in" />
-          <.link href={~p"/users/reset_password"} class="text-sm font-semibold">
+          <.link href={~p"/users/reset_password"} class="text-sm font-semibold text-indigo-600 hover:text-indigo-500">
             Forgot your password?
           </.link>
         </:actions>

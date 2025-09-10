@@ -1,0 +1,59 @@
+<div class="max-w-5xl mx-auto p-6">
+  <.link navigate={~p"/admin/artisans"} class="text-sm text-indigo-600">← Back</.link>
+  <h1 class="text-2xl font-bold mt-2 mb-6">Artisan: <%= @user.name || @user.email %></h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-3">Profile</h2>
+      <.simple_form for={@form} phx-submit="save_profile">
+        <.input field={@form[:name]} label="Name" />
+        <.input field={@form[:bio]} type="textarea" label="Bio" />
+        <:actions>
+          <.button>Save</.button>
+        </:actions>
+      </.simple_form>
+    </div>
+
+    <div class="bg-white border rounded p-4">
+      <h2 class="font-semibold mb-3">Activity Summary</h2>
+      <p class="text-sm">Products: <%= length(@products) %></p>
+      <p class="text-sm">Orders: <%= length(@orders) %></p>
+    </div>
+  </div>
+
+  <div class="bg-white border rounded p-4 mt-6">
+    <h3 class="font-semibold mb-3">Recent Products</h3>
+    <ul class="list-disc list-inside text-sm">
+      <%= for p <- Enum.take(@products, 10) do %>
+        <li><%= p.name %></li>
+      <% end %>
+    </ul>
+  </div>
+
+  <div class="bg-white border rounded p-4 mt-6">
+    <h3 class="font-semibold mb-3">Activity Logs</h3>
+    <%= if Enum.empty?(@activity_logs) do %>
+      <p class="text-sm text-gray-500">No recent activity.</p>
+    <% else %>
+      <ul class="divide-y">
+        <%= for log <- @activity_logs do %>
+          <li class="py-2 text-sm">
+            <div class="flex justify-between">
+              <span>
+                <span class="font-medium"><%= log.action %></span>
+                by
+                <span class="text-gray-700"><%= if log.admin, do: (log.admin.username || log.admin.email), else: "system" %></span>
+              </span>
+              <span class="text-gray-500"><%= Calendar.strftime(log.inserted_at, "%Y-%m-%d %H:%M") %></span>
+            </div>
+            <%= if log.metadata do %>
+              <pre class="mt-1 text-xs bg-gray-50 p-2 rounded overflow-x-auto"><%= Jason.encode!(log.metadata) %></pre>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  </div>
+</div>
+
+

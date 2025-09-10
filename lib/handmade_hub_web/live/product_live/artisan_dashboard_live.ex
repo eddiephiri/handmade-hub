@@ -1,28 +1,46 @@
 defmodule HandmadeHubWeb.ArtisanDashboardLive do
   use HandmadeHubWeb, :live_view
+  import HandmadeHubWeb.FormatHelpers
   alias HandmadeHub.ArtisanOrders
   alias HandmadeHub.Catalog
+  alias HandmadeHub.Messaging
+  alias HandmadeHub.Reviews
 
   @impl true
   def mount(_params, _session, socket) do
     user = socket.assigns.current_user
-    
+
     cond do
       is_nil(user) ->
         {:ok,
          socket
          |> put_flash(:error, "You must be logged in to access this page")
          |> redirect(to: ~p"/users/log_in")}
-      
-      user.role != "artisan" ->
+
+      user.role != "artisan" or user.artisan_status != "approved" ->
         {:ok,
          socket
-         |> put_flash(:error, "This page is only accessible to artisans")
          |> redirect(to: ~p"/buyer/dashboard")}
-      
+
       true ->
         form = HandmadeHub.Accounts.User.profile_changeset(user, %{}) |> to_form()
         password_form = HandmadeHub.Accounts.change_user_password(user) |> to_form()
+        socket =
+          socket
+          |> allow_upload(:profile_image,
+            accept: ~w(.jpg .jpeg .png .gif),
+            max_entries: 1,
+            max_file_size: 5_000_000
+          )
+        stats = ArtisanOrders.get_artisan_stats(user.id, :this_month)
+        active_products_count = HandmadeHub.Catalog.list_user_products(user.id) |> Enum.count(&(&1.quantity > 0))
+        avg_rating_float =
+          case Reviews.average_all_reviews_for_artisan(user.id) do
+            n when is_integer(n) -> n * 1.0
+            n when is_float(n) -> n
+            _ -> 0.0
+          end
+        unread_messages = Messaging.unread_count(user.id)
         {:ok, assign(socket,
           page: :dashboard,
           products: [],
@@ -39,19 +57,14 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
           show_password_form: false,
           show_view_modal: false,
           view_product: nil,
+          view_selected_image_url: nil,
           sidebar_collapsed: false,
           # Orders related assigns
           orders: [],
-          order_stats: %{
-            total_orders: 0,
-            total_revenue: Decimal.new(0),
-            pending_orders: 0,
-            processing_orders: 0,
-            completed_orders: 0,
-            items_sold: 0,
-            best_sellers: [],
-            monthly_trend: []
-          },
+          order_stats: stats,
+          active_products_count: active_products_count,
+          avg_rating: avg_rating_float,
+          unread_messages: unread_messages,
           selected_order: nil,
           show_order_modal: false,
           order_filters: %{
@@ -78,7 +91,10 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
   end
 
   def handle_event("show_dashboard", _params, socket) do
-    {:noreply, assign(socket, page: :dashboard)}
+    user_id = socket.assigns.current_user.id
+    stats = ArtisanOrders.get_artisan_stats(user_id, socket.assigns.stats_period)
+    active_products_count = HandmadeHub.Catalog.list_user_products(user_id) |> Enum.count(&(&1.quantity > 0))
+    {:noreply, assign(socket, page: :dashboard, order_stats: stats, active_products_count: active_products_count)}
   end
 
   def handle_event("new_product", _params, socket) do
@@ -128,8 +144,13 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
     case handle_profile_upload(socket, user_params) do
       {:ok, updated_params} ->
         case HandmadeHub.Accounts.update_user_profile(socket.assigns.current_user, updated_params) do
-          {:ok, _user} ->
-            {:noreply, put_flash(socket, :info, "Profile updated successfully.")}
+          {:ok, user} ->
+            form = HandmadeHub.Accounts.User.profile_changeset(user, %{}) |> to_form()
+            {:noreply,
+             socket
+             |> assign(:current_user, user)
+             |> assign(:profile_form, form)
+             |> put_flash(:info, "Profile updated successfully.")}
           {:error, changeset} ->
             {:noreply, assign(socket, profile_form: to_form(changeset))}
         end
@@ -164,11 +185,29 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
 
   def handle_event("view_product", %{"id" => id}, socket) do
     product = HandmadeHub.Catalog.get_product!(id)
-    {:noreply, assign(socket, show_view_modal: true, view_product: product)}
+    avg = Reviews.average_product_rating(product.id)
+    avg_float = case avg do
+      n when is_integer(n) -> n * 1.0
+      n when is_float(n) -> n
+      _ -> 0.0
+    end
+    primary = Enum.find(product.product_images || [], &(&1.is_primary)) || List.first(product.product_images || [])
+    selected_url = if primary, do: primary.image_url, else: product.image
+    {:noreply, assign(socket,
+      show_view_modal: true,
+      view_product: product,
+      view_product_avg: avg_float,
+      view_product_reviews: Reviews.list_product_reviews(product.id),
+      view_selected_image_url: selected_url
+    )}
   end
 
   def handle_event("close_view_modal", _params, socket) do
-    {:noreply, assign(socket, show_view_modal: false, view_product: nil)}
+    {:noreply, assign(socket, show_view_modal: false, view_product: nil, view_selected_image_url: nil)}
+  end
+
+  def handle_event("select_view_image", %{"url" => url}, socket) do
+    {:noreply, assign(socket, view_selected_image_url: url)}
   end
 
   # Orders event handlers
@@ -176,10 +215,10 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
     user_id = socket.assigns.current_user.id
     orders = ArtisanOrders.list_artisan_orders(user_id)
     stats = ArtisanOrders.get_artisan_stats(user_id, socket.assigns.stats_period)
-    
-    {:noreply, assign(socket, 
-      page: :orders, 
-      orders: orders, 
+
+    {:noreply, assign(socket,
+      page: :orders,
+      orders: orders,
       order_stats: stats,
       order_filters: %{
         search: "",
@@ -189,12 +228,100 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
     )}
   end
 
+  def handle_event("show_reviews", _params, socket) do
+    user_id = socket.assigns.current_user.id
+    reviews = Reviews.list_all_reviews_for_artisan(user_id)
+    avg = Reviews.average_all_reviews_for_artisan(user_id)
+    avg_float = case avg do
+      %Decimal{} = d -> Decimal.to_float(d)
+      n when is_integer(n) -> n * 1.0
+      n when is_float(n) -> n
+      _ -> 0.0
+    end
+    {:noreply, assign(socket, page: :reviews, artisan_reviews: reviews, avg_rating: avg_float)}
+  end
+
+  # New: Messages section handlers
+  def handle_event("show_messages", _params, socket) do
+    user_id = socket.assigns.current_user.id
+    conversations = HandmadeHub.Messaging.list_conversations(user_id)
+    {:noreply, assign(socket,
+      page: :messages,
+      conversations: conversations,
+      with_user: nil,
+      messages: [],
+      message_form: to_form(%{}, as: :message)
+    )}
+  end
+
+  def handle_event("msg_select_conversation", %{"other_id" => id}, socket) do
+    other_id = String.to_integer(id)
+    HandmadeHub.Messaging.mark_read(socket.assigns.current_user.id, other_id)
+    {:noreply, assign(socket,
+      with_user: HandmadeHub.Accounts.get_user!(other_id),
+      messages: HandmadeHub.Messaging.list_messages(socket.assigns.current_user.id, other_id)
+    )}
+  end
+
+  def handle_event("msg_send", %{"message" => %{"body" => body}}, socket) do
+    if socket.assigns.with_user do
+      {:ok, _} = HandmadeHub.Messaging.send_message(%{
+        sender_id: socket.assigns.current_user.id,
+        recipient_id: socket.assigns.with_user.id,
+        subject: nil,
+        body: body
+      })
+      msgs = HandmadeHub.Messaging.list_messages(socket.assigns.current_user.id, socket.assigns.with_user.id)
+      {:noreply, assign(socket, messages: msgs, message_form: to_form(%{}, as: :message))}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  # New: Settings section handlers
+  def handle_event("show_settings", _params, socket) do
+    user = socket.assigns.current_user
+    {:noreply, assign(socket,
+      page: :settings,
+      settings_email_form: HandmadeHub.Accounts.change_user_email(user) |> to_form(),
+      settings_password_form: HandmadeHub.Accounts.change_user_password(user) |> to_form(),
+      trigger_submit: false,
+      current_password: ""
+    )}
+  end
+
+  def handle_event("settings_validate_email", %{"user" => params}, socket) do
+    form = socket.assigns.current_user |> HandmadeHub.Accounts.change_user_email(params) |> Map.put(:action, :validate) |> to_form()
+    {:noreply, assign(socket, settings_email_form: form)}
+  end
+
+  def handle_event("settings_update_email", %{"current_password" => pwd, "user" => params}, socket) do
+    case HandmadeHub.Accounts.apply_user_email(socket.assigns.current_user, pwd, params) do
+      {:ok, applied} ->
+        HandmadeHub.Accounts.deliver_user_update_email_instructions(applied, socket.assigns.current_user.email, &url(~p"/users/settings/confirm_email/#{&1}"))
+        {:noreply, put_flash(socket, :info, "Confirmation email sent.")}
+      {:error, cs} -> {:noreply, assign(socket, settings_email_form: to_form(Map.put(cs, :action, :insert)))}
+    end
+  end
+
+  def handle_event("settings_validate_password", %{"user" => params}, socket) do
+    form = socket.assigns.current_user |> HandmadeHub.Accounts.change_user_password(params) |> Map.put(:action, :validate) |> to_form()
+    {:noreply, assign(socket, settings_password_form: form)}
+  end
+
+  def handle_event("settings_update_password", %{"current_password" => pwd, "user" => params}, socket) do
+    case HandmadeHub.Accounts.update_user_password(socket.assigns.current_user, pwd, params) do
+      {:ok, _u} -> {:noreply, put_flash(socket, :info, "Password updated.")}
+      {:error, cs} -> {:noreply, assign(socket, settings_password_form: to_form(cs))}
+    end
+  end
+
   def handle_event("filter_orders", params, socket) do
     user_id = socket.assigns.current_user.id
     filters = Map.take(params, ["search", "status", "payment_status"])
               |> Enum.filter(fn {_k, v} -> v != "" end)
               |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), v} end)
-    
+
     filtered_orders = ArtisanOrders.list_artisan_orders(user_id, filters)
     {:noreply, assign(socket, orders: filtered_orders, order_filters: filters)}
   end
@@ -203,9 +330,9 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
     user_id = socket.assigns.current_user.id
     order = ArtisanOrders.get_artisan_order!(user_id, order_id)
     artisan_items = ArtisanOrders.get_artisan_order_items(user_id, order_id)
-    
-    {:noreply, assign(socket, 
-      show_order_modal: true, 
+
+    {:noreply, assign(socket,
+      show_order_modal: true,
       selected_order: Map.put(order, :artisan_items, artisan_items)
     )}
   end
@@ -224,23 +351,23 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
       "all" -> :all_time
       _ -> :this_month
     end
-    
+
     stats = ArtisanOrders.get_artisan_stats(user_id, period_atom)
     {:noreply, assign(socket, stats_period: period_atom, order_stats: stats)}
   end
 
   def handle_event("update_order_status", %{"order_id" => order_id, "status" => status}, socket) do
     user_id = socket.assigns.current_user.id
-    
+
     case ArtisanOrders.update_artisan_order_status(user_id, order_id, status) do
       {:ok, _order} ->
         orders = ArtisanOrders.list_artisan_orders(user_id, socket.assigns.order_filters)
         stats = ArtisanOrders.get_artisan_stats(user_id, socket.assigns.stats_period)
-        
+
         {:noreply, socket
          |> put_flash(:info, "Order status updated successfully")
          |> assign(orders: orders, order_stats: stats, show_order_modal: false, selected_order: nil)}
-      
+
       {:error, message} ->
         {:noreply, put_flash(socket, :error, message)}
     end
@@ -254,12 +381,53 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
     {:noreply, assign(socket, show_print_modal: false)}
   end
 
-  defp handle_profile_upload(_socket, %{"profile_image" => %Phoenix.LiveView.UploadEntry{} = upload} = params) do
-    upload_path = Path.join(["priv/static/uploads/profile_images", upload.client_name])
-    File.cp(upload.path, upload_path)
-    {:ok, Map.put(params, "profile_image", "/uploads/profile_images/#{upload.client_name}")}
+  defp handle_profile_upload(socket, params) do
+    uploads_dir = "priv/static/uploads/profile_images"
+    File.mkdir_p!(uploads_dir)
+
+    uploaded_urls = consume_uploaded_entries(socket, :profile_image, fn %{path: path}, entry ->
+      ext = Path.extname(entry.client_name)
+      filename = "#{Ecto.UUID.generate()}#{ext}"
+      dest_path = Path.join(uploads_dir, filename)
+      File.cp!(path, dest_path)
+      {:ok, "/uploads/profile_images/#{filename}"}
+    end)
+
+    case uploaded_urls do
+      [url | _] -> {:ok, Map.put(params, "profile_image", url)}
+      _ -> {:ok, params}
+    end
   end
-  defp handle_profile_upload(_socket, params), do: {:ok, params}
+
+  defp avatar_url(nil), do: nil
+  defp avatar_url(path) when is_binary(path) do
+    if String.starts_with?(path, "/") do
+      path
+    else
+      "/uploads/profile_images/" <> path
+    end
+  end
+
+  defp to_float_rating(avg) do
+    cond do
+      is_integer(avg) -> avg * 1.0
+      is_float(avg) -> avg
+      match?(%Decimal{}, avg) -> Decimal.to_float(avg)
+      true -> 0.0
+    end
+  end
+
+  defp product_avg(product_id) do
+    Reviews.average_product_rating(product_id) |> to_float_rating()
+  end
+
+  defp primary_image_url(nil), do: nil
+  defp primary_image_url(%{product_images: imgs}) when is_list(imgs) do
+    case Enum.find(imgs, &(&1.is_primary)) || List.first(imgs) do
+      nil -> nil
+      img -> img.image_url
+    end
+  end
 
   @impl true
   def handle_info({HandmadeHubWeb.ProductLive.FormComponent, {:saved, _product}}, socket) do
@@ -285,7 +453,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
       <!-- Enhanced Modern Sidebar -->
       <aside class={[
         "bg-white/95 backdrop-blur-sm border-r border-slate-200/60 flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg",
-        "hidden md:block",
+        "hidden md:block h-screen sticky top-0 overflow-hidden",
         @sidebar_collapsed && "w-20" || "w-72"
       ]}>
         <div class="h-full flex flex-col">
@@ -308,8 +476,10 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
               <button
                 phx-click="toggle_sidebar"
                 class="p-2 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-400 hover:text-slate-600"
+                aria-label="Toggle sidebar"
+                aria-pressed={@sidebar_collapsed}
               >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg class={["w-5 h-5 transition-transform duration-200 transform", @sidebar_collapsed && "rotate-180"]} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
@@ -321,7 +491,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
             <div class={["flex items-center", @sidebar_collapsed && "justify-center"]}>
               <div class="relative">
                 <%= if @current_user.profile_image do %>
-                  <img src={@current_user.profile_image} alt="Profile" class="w-12 h-12 rounded-full object-cover ring-2 ring-blue-100" />
+                  <img src={avatar_url(@current_user.profile_image)} alt="Profile" class="w-12 h-12 rounded-full object-cover ring-2 ring-blue-100" />
                 <% else %>
                   <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold shadow-lg">
                     <%= String.first(@current_user.name || @current_user.email) |> String.upcase() %>
@@ -339,7 +509,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
           </div>
 
           <!-- Navigation -->
-          <nav class="flex-1 p-4">
+          <nav class="flex-1 p-4 overflow-y-auto">
             <div class="space-y-2">
               <!-- Dashboard -->
               <button
@@ -403,20 +573,29 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
               </button>
 
               <!-- Messages -->
-              <.link
-                navigate="#"
-                class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              <button
+                phx-click="show_messages"
+                class={[
+                  "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+                  @page == :messages && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                ]}
               >
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
                 <span class={["ml-3 font-medium", @sidebar_collapsed && "hidden"]}>Messages</span>
-                <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity", @sidebar_collapsed && "hidden"]}></div>
-              </.link>
+                <%= if @unread_messages && @unread_messages > 0 do %>
+                  <span class={[
+                    "ml-auto inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full bg-yellow-400 text-indigo-900 text-xs font-bold",
+                    @sidebar_collapsed && "hidden"
+                  ]}><%= @unread_messages %></span>
+                <% end %>
+                <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity", @page == :messages && "opacity-100", @sidebar_collapsed && "hidden"]}></div>
+              </button>
 
               <!-- Reviews -->
-              <.link
-                navigate="#"
+              <button
+                phx-click="show_reviews"
                 class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               >
                 <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -424,7 +603,23 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                 </svg>
                 <span class={["ml-3 font-medium", @sidebar_collapsed && "hidden"]}>Reviews</span>
                 <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity", @sidebar_collapsed && "hidden"]}></div>
-              </.link>
+              </button>
+
+              <!-- Settings -->
+              <button
+                phx-click="show_settings"
+                class={[
+                  "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+                  @page == :settings && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                ]}
+              >
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.983 13.9a1.9 1.9 0 100-3.8 1.9 1.9 0 000 3.8z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.285 12.972a7.953 7.953 0 000-1.944l2.122-1.55a.5.5 0 00.12-.66l-2-3.464a.5.5 0 00-.607-.218l-2.5 1a7.97 7.97 0 00-1.683-.98l-.375-2.65a.5.5 0 00-.497-.426h-4a.5.5 0 00-.497.426l-.375 2.65c.593-.23 1.157-.57 1.683-.98l2.5 1a.5.5 0 00.607-.218l-2-3.464a.5.5 0 00-.12-.66l-2.122-1.55z" />
+                </svg>
+                <span class={["ml-3 font-medium", @sidebar_collapsed && "hidden"]}>Settings</span>
+                <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity", @page == :settings && "opacity-100", @sidebar_collapsed && "hidden"]}></div>
+              </button>
             </div>
           </nav>
 
@@ -477,7 +672,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                   </div>
-                  <span class="text-2xl font-bold text-slate-800">12</span>
+                  <span class="text-2xl font-bold text-slate-800"><%= @active_products_count %></span>
                 </div>
                 <h3 class="text-sm font-semibold text-slate-600">Active Products</h3>
               </div>
@@ -489,7 +684,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <span class="text-2xl font-bold text-slate-800">8</span>
+                  <span class="text-2xl font-bold text-slate-800"><%= @order_stats.pending_orders + @order_stats.processing_orders %></span>
                 </div>
                 <h3 class="text-sm font-semibold text-slate-600">New Orders</h3>
               </div>
@@ -498,10 +693,10 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                 <div class="flex items-center justify-between mb-4">
                   <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <span class="text-2xl font-bold text-slate-800">K2,340</span>
+                  <span class="text-2xl font-bold text-slate-800"><%= format_currency(@order_stats.total_revenue || Decimal.new(0)) %></span>
                 </div>
                 <h3 class="text-sm font-semibold text-slate-600">Total Revenue</h3>
               </div>
@@ -513,7 +708,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                     </svg>
                   </div>
-                  <span class="text-2xl font-bold text-slate-800">4.8</span>
+                  <span class="text-2xl font-bold text-slate-800"><%= :erlang.float_to_binary(@avg_rating || 0.0, decimals: 1) %></span>
                 </div>
                 <h3 class="text-sm font-semibold text-slate-600">Avg. Rating</h3>
               </div>
@@ -562,16 +757,31 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
             <div id="products" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               <div :for={{_id, product} <- @product_streams.products} class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <div class="aspect-square relative overflow-hidden">
-                  <%= if product.image do %>
-                    <img src={product.image} alt={product.name} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                  <% img = (Enum.find(product.product_images || [], &(&1.is_primary)) || List.first(product.product_images || [])) %>
+                  <%= if img && img.image_url do %>
+                    <img src={img.image_url} alt={product.name} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
                   <% else %>
-                    <div class="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
-                      <svg class="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
+                    <%= if product.image do %>
+                      <img src={product.image} alt={product.name} class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300">
+                    <% else %>
+                      <div class="w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                        <svg class="w-12 h-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    <% end %>
                   <% end %>
                   <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+                  <div class="absolute bottom-2 left-2 flex items-center gap-2 bg-white/80 backdrop-blur px-2 py-1 rounded">
+                    <%= if @current_user.profile_image do %>
+                      <img src={avatar_url(@current_user.profile_image)} alt="Artisan" class="w-6 h-6 rounded-full object-cover" />
+                    <% else %>
+                      <div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-[10px] font-semibold">
+                        <%= String.first(@current_user.name || @current_user.email) |> String.upcase() %>
+                      </div>
+                    <% end %>
+                    <span class="text-xs text-slate-700">You</span>
+                  </div>
                 </div>
 
                 <div class="p-5">
@@ -579,14 +789,60 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                   <p class="text-slate-600 text-sm mb-4 line-clamp-2 leading-relaxed"><%= product.description %></p>
 
                   <div class="flex items-center justify-between mb-4">
-                    <span class="text-2xl font-bold text-green-600">K<%= product.price %></span>
-                    <div class="flex items-center text-sm text-slate-500">
-                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                      </svg>
-                      <%= product.quantity %> in stock
+                    <span class="text-2xl font-bold text-green-600"><%= format_currency(product.price) %></span>
+                    <div class="flex items-center text-sm text-slate-500 gap-3">
+                      <div class="flex items-center">
+                        <%= for i <- 1..5 do %>
+                          <svg class={[
+                            "w-4 h-4",
+                            (i <= (Float.round(product_avg(product.id) || 0.0) |> trunc)) && "text-yellow-400" || "text-gray-300"
+                          ]} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        <% end %>
+                        <span class="ml-1 text-xs">(<%= :erlang.float_to_binary(product_avg(product.id) || 0.0, decimals: 1) %>)</span>
+                      </div>
+                      <div class="flex items-center text-sm text-slate-500">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <%= product.quantity %> in stock
+                      </div>
                     </div>
                   </div>
+
+                  <%= if @view_product && @view_product.id == product.id do %>
+                    <div class="mb-4 flex items-center gap-2">
+                      <div class="flex">
+                        <%= for i <- 1..5 do %>
+                          <svg class={["w-4 h-4", (i <= (Float.round(@view_product_avg || 0.0) |> trunc)) && "text-yellow-400" || "text-gray-300"]} fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        <% end %>
+                      </div>
+                      <span class="text-xs text-slate-500">(<%= :erlang.float_to_binary(@view_product_avg || 0.0, decimals: 1) %>)</span>
+                    </div>
+                    <div class="space-y-2 max-h-48 overflow-y-auto">
+                      <%= for r <- (@view_product_reviews || []) do %>
+                        <div class="text-sm text-slate-700 border-b pb-2">
+                          <div class="flex items-center gap-2">
+                            <div class="flex">
+                              <%= for i <- 1..5 do %>
+                                <svg class={["w-3.5 h-3.5", (i <= r.rating) && "text-yellow-400" || "text-gray-300"]} fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              <% end %>
+                            </div>
+                            <span class="text-[11px] text-slate-500"><%= Calendar.strftime(r.inserted_at, "%b %d, %Y") %></span>
+                          </div>
+                          <p><%= r.comment %></p>
+                        </div>
+                      <% end %>
+                      <%= if (@view_product_reviews || []) == [] do %>
+                        <div class="text-slate-500 text-sm">No reviews yet.</div>
+                      <% end %>
+                    </div>
+                  <% end %>
 
                   <div class="flex gap-2">
                     <.button phx-click="view_product" phx-value-id={product.id} class="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border-0 py-2 px-3 rounded-lg text-sm font-medium transition-colors">
@@ -665,6 +921,48 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
             </.modal>
           <% end %>
 
+          <%= if @page == :reviews do %>
+            <div class="mb-8">
+              <h1 class="text-3xl font-bold text-slate-800 mb-2">Reviews</h1>
+              <p class="text-slate-600">What buyers are saying about you.</p>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-6 flex items-center gap-4">
+              <div class="flex">
+                <%= for i <- 1..5 do %>
+                  <svg class={["w-6 h-6", (i <= (Float.round(@avg_rating || 0.0) |> trunc)) && "text-yellow-400" || "text-gray-300"]} fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                <% end %>
+              </div>
+              <div class="text-slate-700 text-lg font-semibold"><%= :erlang.float_to_binary(@avg_rating || 0.0, decimals: 1) %></div>
+            </div>
+
+            <div class="space-y-4">
+              <%= for r <- (@artisan_reviews || []) do %>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-4">
+                  <div class="flex items-center gap-2 mb-1">
+                    <div class="flex">
+                      <%= for i <- 1..5 do %>
+                        <svg class={["w-4 h-4", (i <= r.rating) && "text-yellow-400" || "text-gray-300"]} fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      <% end %>
+                    </div>
+                    <span class="text-xs text-slate-500"><%= Calendar.strftime(r.inserted_at, "%b %d, %Y") %></span>
+                    <%= if Map.has_key?(r, :user) && r.user do %>
+                      <span class="text-xs text-slate-500">• by <%= r.user.name || r.user.email %></span>
+                    <% end %>
+                  </div>
+                  <p class="text-sm text-slate-700"><%= r.comment %></p>
+                </div>
+              <% end %>
+              <%= if (@artisan_reviews || []) == [] do %>
+                <div class="text-slate-500">No reviews yet.</div>
+              <% end %>
+            </div>
+          <% end %>
+
           <%= if @page == :profile do %>
             <div class="max-w-2xl mx-auto">
               <div class="mb-8">
@@ -676,7 +974,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                 <%= if @current_user.profile_image do %>
                   <div class="flex justify-center mb-8">
                     <div class="relative">
-                      <img src={@current_user.profile_image} alt="Profile Image" class="w-32 h-32 rounded-full object-cover border-4 border-blue-100" />
+                      <img src={avatar_url(@current_user.profile_image)} alt="Profile Image" class="w-32 h-32 rounded-full object-cover border-4 border-blue-100" />
                       <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
                         <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3z" />
@@ -695,13 +993,10 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                 >
                   <.input field={@profile_form[:name]} type="text" label="Full Name" class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500" />
                   <.input field={@profile_form[:bio]} type="textarea" label="Bio" class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500" />
-                  <.input
-                    field={@profile_form[:profile_image]}
-                    type="file"
-                    label="Profile Image"
-                    accept="image/*"
-                    class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
-                  />
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Profile Image</label>
+                    <.live_file_input upload={@uploads.profile_image} class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500" />
+                  </div>
                   <:actions>
                     <.button class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-xl shadow-lg transition-all duration-200 transform hover:scale-105">
                       Save Changes
@@ -758,16 +1053,32 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
 
                 <%= if @view_product do %>
                   <div class="space-y-6">
-                    <div class="flex justify-center">
-                      <%= if @view_product.image do %>
-                        <img src={@view_product.image} alt={@view_product.name} class="w-64 h-64 object-cover rounded-2xl shadow-lg" />
-                      <% else %>
-                        <div class="w-64 h-64 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
-                          <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
+                    <div class="flex flex-col items-center gap-4">
+                      <% main_img = @view_selected_image_url || primary_image_url(@view_product) || @view_product.image %>
+                      <div class="flex justify-center">
+                        <%= if main_img do %>
+                          <img src={main_img} alt={@view_product.name} class="w-64 h-64 object-cover rounded-2xl shadow-lg" />
+                        <% else %>
+                          <div class="w-64 h-64 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center">
+                            <svg class="w-16 h-16 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2z" />
+                            </svg>
+                          </div>
+                        <% end %>
+                      </div>
+
+                      <div class="w-full overflow-x-auto">
+                        <div class="flex gap-3 min-w-max px-1">
+                          <%= for img <- (@view_product.product_images || []) do %>
+                            <button phx-click="select_view_image" phx-value-url={img.image_url} class={[
+                              "w-20 h-20 rounded-lg overflow-hidden border transition ring-offset-2",
+                              (img.is_primary || img.image_url == @view_selected_image_url) && "ring-2 ring-blue-500 border-blue-400" || "border-slate-200 hover:border-slate-400"
+                            ]}>
+                              <img src={img.image_url} alt="Thumbnail" class="w-full h-full object-cover" />
+                            </button>
+                          <% end %>
                         </div>
-                      <% end %>
+                      </div>
                     </div>
 
                     <div class="bg-slate-50 rounded-xl p-6 space-y-4">
@@ -784,7 +1095,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                       <div class="grid grid-cols-2 gap-4">
                         <div>
                           <span class="text-sm font-medium text-slate-500">Price</span>
-                          <p class="text-xl font-bold text-green-600">K<%= @view_product.price %></p>
+                          <p class="text-xl font-bold text-green-600"><%= format_currency(@view_product.price) %></p>
                         </div>
 
                         <div>
@@ -809,7 +1120,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                   <p class="text-gray-600 mt-1">Track and manage your product orders</p>
                 </div>
                 <div class="flex items-center space-x-4">
-                  <select 
+                  <select
                     phx-change="filter_stats_period"
                     name="stats_period"
                     class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -854,7 +1165,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                   <div class="flex items-center justify-between">
                     <div>
                       <p class="text-sm font-medium text-gray-600">Total Revenue</p>
-                      <p class="text-3xl font-bold text-green-600 mt-2">K<%= :erlang.float_to_binary(Decimal.to_float(@order_stats.total_revenue || Decimal.new(0)), decimals: 2) %></p>
+                      <p class="text-3xl font-bold text-green-600 mt-2"><%= format_currency(@order_stats.total_revenue || Decimal.new(0)) %></p>
                     </div>
                     <div class="p-3 bg-green-100 rounded-lg">
                       <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1022,7 +1333,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                               </span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                              K<%= :erlang.float_to_binary(Decimal.to_float(order.total || Decimal.new(0)), decimals: 2) %>
+                              <%= format_currency(order.total || Decimal.new(0)) %>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                               <button
@@ -1074,23 +1385,23 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                           <p class="font-medium"><%= Calendar.strftime(@selected_order.inserted_at, "%B %d, %Y") %></p>
                         </div>
                       </div>
-                      
+
                       <div>
                         <p class="text-sm text-gray-500 mb-2">Items</p>
                         <div class="border rounded-lg p-4 space-y-2">
                           <%= for item <- @selected_order.order_items do %>
                             <div class="flex justify-between">
                               <span><%= item.product.name %> x <%= item.quantity %></span>
-                              <span class="font-medium">K<%= :erlang.float_to_binary(Decimal.to_float(item.subtotal || Decimal.new(0)), decimals: 2) %></span>
+                              <span class="font-medium"><%= format_currency(item.subtotal || Decimal.new(0)) %></span>
                             </div>
                           <% end %>
                         </div>
                       </div>
-                      
+
                       <div class="border-t pt-4">
                         <div class="flex justify-between font-semibold">
                           <span>Total</span>
-                          <span>K<%= :erlang.float_to_binary(Decimal.to_float(@selected_order.total || Decimal.new(0)), decimals: 2) %></span>
+                          <span><%= format_currency(@selected_order.total || Decimal.new(0)) %></span>
                         </div>
                       </div>
                     </div>
@@ -1109,13 +1420,13 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                         #print-content { position: absolute; left: 0; top: 0; }
                       }
                     </style>
-                    
+
                     <div class="text-center mb-6">
                       <h2 class="text-2xl font-bold">Order Report</h2>
                       <p class="text-gray-600">Period: <%= @stats_period %></p>
                       <p class="text-gray-600">Generated: <%= Calendar.strftime(DateTime.utc_now(), "%B %d, %Y") %></p>
                     </div>
-                    
+
                     <div class="space-y-6">
                       <div class="grid grid-cols-2 gap-4">
                         <div class="border rounded p-4">
@@ -1124,10 +1435,10 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                         </div>
                         <div class="border rounded p-4">
                           <p class="text-sm text-gray-500">Total Revenue</p>
-                          <p class="text-2xl font-bold">K<%= :erlang.float_to_binary(Decimal.to_float(@order_stats.total_revenue || Decimal.new(0)), decimals: 2) %></p>
+                          <p class="text-2xl font-bold"><%= format_currency(@order_stats.total_revenue || Decimal.new(0)) %></p>
                         </div>
                       </div>
-                      
+
                       <button
                         onclick="window.print()"
                         class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -1138,6 +1449,86 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                   </div>
                 </.modal>
               <% end %>
+            </div>
+          <% end %>
+
+          <%= if @page == :messages do %>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="md:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+                <h2 class="text-lg font-semibold mb-3 text-slate-800">Conversations</h2>
+                <div class="space-y-2">
+                  <%= for c <- (@conversations || []) do %>
+                    <button phx-click="msg_select_conversation" phx-value-other_id={c.other_id} class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50">
+                      <div class="flex items-center justify-between">
+                        <span class="font-medium text-slate-700"><%= HandmadeHub.Accounts.get_user!(c.other_id).name || HandmadeHub.Accounts.get_user!(c.other_id).email %></span>
+                        <span class="text-xs text-slate-400"><%= Calendar.strftime(c.last_message.inserted_at, "%b %d") %></span>
+                      </div>
+                      <p class="text-sm text-slate-500 truncate"><%= c.last_message.body %></p>
+                    </button>
+                  <% end %>
+                  <%= if (@conversations || []) == [] do %>
+                    <div class="text-slate-500">No conversations yet.</div>
+                  <% end %>
+                </div>
+              </div>
+              <div class="md:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+                <%= if @with_user do %>
+                  <div class="border-b pb-3 mb-4">
+                    <h3 class="font-semibold text-slate-800"><%= @with_user.name || @with_user.email %></h3>
+                  </div>
+                  <div class="space-y-3 max-h-[50vh] overflow-y-auto pr-2">
+                    <%= for m <- (@messages || []) do %>
+                      <div class={[
+                        "px-4 py-2 rounded-xl max-w-[80%]",
+                        m.sender_id == @current_user.id && "ml-auto bg-blue-600 text-white" || "bg-slate-100 text-slate-800"
+                      ]}>
+                        <p class="text-sm"><%= m.body %></p>
+                        <div class="text-[10px] opacity-70 mt-1"><%= Calendar.strftime(m.inserted_at, "%b %d, %H:%M") %></div>
+                      </div>
+                    <% end %>
+                  </div>
+                  <.simple_form for={@message_form} phx-submit="msg_send" class="mt-4 flex gap-2">
+                    <.input field={@message_form[:body]} class="flex-1" placeholder="Type a message..." />
+                    <:actions>
+                      <.button>Send</.button>
+                    </:actions>
+                  </.simple_form>
+                <% else %>
+                  <div class="text-slate-500">Select a conversation to start messaging.</div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <%= if @page == :settings do %>
+            <div class="max-w-3xl mx-auto space-y-8">
+              <div>
+                <h1 class="text-3xl font-bold text-slate-800 mb-2">Account Settings</h1>
+                <p class="text-slate-600">Manage your account and security.</p>
+              </div>
+
+              <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4">Update Email</h2>
+                <.simple_form for={@settings_email_form} id="settings_email_form" phx-change="settings_validate_email" phx-submit="settings_update_email" class="space-y-4">
+                  <.input field={@settings_email_form[:email]} type="email" label="New email" />
+                  <.input name="current_password" type="password" label="Current password" value={@current_password} />
+                  <:actions>
+                    <.button>Change email</.button>
+                  </:actions>
+                </.simple_form>
+              </div>
+
+              <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+                <h2 class="text-lg font-semibold text-slate-800 mb-4">Update Password</h2>
+                <.simple_form for={@settings_password_form} id="settings_password_form" phx-change="settings_validate_password" phx-submit="settings_update_password" class="space-y-4">
+                  <.input name="current_password" type="password" label="Current password" value={@current_password} />
+                  <.input field={@settings_password_form[:password]} type="password" label="New password" />
+                  <.input field={@settings_password_form[:password_confirmation]} type="password" label="Confirm new password" />
+                  <:actions>
+                    <.button>Change password</.button>
+                  </:actions>
+                </.simple_form>
+              </div>
             </div>
           <% end %>
         </div>

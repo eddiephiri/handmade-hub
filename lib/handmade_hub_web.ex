@@ -86,7 +86,6 @@ defmodule HandmadeHubWeb do
       # Core UI components and translation
       import HandmadeHubWeb.CoreComponents
       import HandmadeHubWeb.Gettext
-      import HandmadeHubWeb.FormatHelpers
 
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
@@ -102,6 +101,13 @@ defmodule HandmadeHubWeb do
         endpoint: HandmadeHubWeb.Endpoint,
         router: HandmadeHubWeb.Router,
         statics: HandmadeHubWeb.static_paths()
+    end
+  end
+
+  # Admin auth plugs for router pipelines
+  def admin_auth_plugs do
+    quote do
+      import HandmadeHubWeb.AdminAuth, only: [fetch_current_admin: 2, redirect_if_admin_is_authenticated: 2, require_authenticated_admin: 2]
     end
   end
 

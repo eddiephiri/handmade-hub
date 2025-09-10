@@ -1,4 +1,6 @@
 <!-- ========== HEADER ========== -->
+<% cu = assigns[:current_user] %>
+<% ad = assigns[:current_admin] %>
 <header class="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-sm border-b border-gray-200 shadow-sm">
   <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex justify-between items-center h-16">
@@ -25,7 +27,7 @@
           Browse
         </.link>
         
-        <%= if @current_user && @current_user.role == "artisan" do %>
+        <%= if cu && cu.role == "artisan" && cu.artisan_status == "approved" do %>
           <.link 
             href={~p"/products/new"} 
             class="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition-colors"
@@ -47,30 +49,33 @@
 
       <!-- Right Section -->
       <div class="flex items-center space-x-4">
-        <%= if @current_user do %>
-          <!-- User Dropdown -->
-          <div class="relative hs-dropdown">
+        <%= if ad do %>
+          <!-- Admin Dropdown -->
+          <div class="relative" x-data="{ open: false }">
             <button 
-              id="hs-dropdown-account" 
+              id="admin-menu-button" 
               type="button" 
               class="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               aria-haspopup="menu" 
               aria-expanded="false" 
-              aria-label="User menu"
+              aria-label="Admin menu"
+              @click="open = !open"
+              @click.outside="open = false"
+              @keydown.escape.window="open = false"
             >
               <span class="hidden md:block text-sm font-medium text-gray-700">
-                <%= @current_user.name || String.split(@current_user.email, "@") |> List.first() %>
+                <%= ad.username || String.split(ad.email, "@") |> List.first() %>
               </span>
               <div class="relative">
-                <%= if @current_user.profile_image do %>
+                <%= if ad.profile_image do %>
                   <img 
                     class="h-8 w-8 rounded-full object-cover ring-2 ring-white" 
-                    src={@current_user.profile_image} 
-                    alt="Profile"
+                    src={ad.profile_image} 
+                    alt="Admin Avatar"
                   />
                 <% else %>
                   <div class="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
-                    <%= String.first(@current_user.name || @current_user.email) |> String.upcase() %>
+                    <%= String.first(ad.username || ad.email) |> String.upcase() %>
                   </div>
                 <% end %>
                 <span class="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-400 ring-2 ring-white"></span>
@@ -79,18 +84,104 @@
               
             <!-- Dropdown Menu -->
             <div 
-              class="hs-dropdown-menu transition-[opacity,margin] duration-200 hs-dropdown-open:opacity-100 opacity-0 hidden absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100" 
+              class="absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100" 
               role="menu" 
               aria-orientation="vertical" 
-              aria-labelledby="hs-dropdown-account"
+              aria-labelledby="admin-menu-button"
+              x-show="open"
+              x-transition.opacity
+              style="display: none;"
             >
               <div class="px-4 py-3">
                 <p class="text-sm text-gray-500">Signed in as</p>
-                <p class="text-sm font-medium text-gray-900 truncate"><%= @current_user.email %></p>
+                <p class="text-sm font-medium text-gray-900 truncate"><%= ad.email %></p>
+              </div>
+              <div class="py-1">
+                <.link 
+                  href={~p"/admin/dashboard"} 
+                  class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  role="menuitem"
+                >
+                  Dashboard
+                </.link>
+                <.link 
+                  href={~p"/admin/settings"} 
+                  class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  role="menuitem"
+                >
+                  Settings
+                </.link>
+                <.link 
+                  href={~p"/browse"} 
+                  class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  role="menuitem"
+                >
+                  Browse
+                </.link>
+              </div>
+              <div class="py-1">
+                <.link 
+                  href={~p"/admin/log_out"} 
+                  method="delete" 
+                  class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  role="menuitem"
+                >
+                  Sign out
+                </.link>
+              </div>
+            </div>
+          </div>
+        <% else %>
+        <%= if cu do %>
+          <!-- User Dropdown (Alpine.js) -->
+          <div class="relative" x-data="{ open: false }">
+            <button 
+              id="user-menu-button" 
+              type="button" 
+              class="flex items-center space-x-3 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              aria-haspopup="menu" 
+              aria-expanded="false" 
+              aria-label="User menu"
+              @click="open = !open"
+              @click.outside="open = false"
+              @keydown.escape.window="open = false"
+            >
+              <span class="hidden md:block text-sm font-medium text-gray-700">
+                <%= cu.name || String.split(cu.email, "@") |> List.first() %>
+              </span>
+              <div class="relative">
+                <%= if cu.profile_image do %>
+                  <img 
+                    class="h-8 w-8 rounded-full object-cover ring-2 ring-white" 
+                    src={cu.profile_image} 
+                    alt="Profile"
+                  />
+                <% else %>
+                  <div class="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                    <%= String.first(cu.name || cu.email) |> String.upcase() %>
+                  </div>
+                <% end %>
+                <span class="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-400 ring-2 ring-white"></span>
+              </div>
+            </button>
+              
+            <!-- Dropdown Menu -->
+            <div 
+              class="absolute right-0 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100" 
+              role="menu" 
+              aria-orientation="vertical" 
+              aria-labelledby="user-menu-button"
+              x-show="open"
+              x-transition.opacity
+              style="display: none;"
+            >
+              <div class="px-4 py-3">
+                <p class="text-sm text-gray-500">Signed in as</p>
+                <p class="text-sm font-medium text-gray-900 truncate"><%= cu.email %></p>
               </div>
               
               <div class="py-1">
-                <%= if @current_user.role == "artisan" do %>
+                <%= if cu.role == "artisan" && cu.artisan_status == "approved" do %>
                   <.link 
                     href={~p"/artisan/dashboard"} 
                     class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -172,6 +263,7 @@
             </.link>
           </div>
         <% end %>
+        <% end %>
       </div>
       
       <!-- Mobile menu button -->
@@ -201,8 +293,8 @@
         Browse
       </.link>
       
-      <%= if @current_user do %>
-        <%= if @current_user.role == "artisan" do %>
+      <%= if cu do %>
+        <%= if cu.role == "artisan" && cu.artisan_status == "approved" do %>
           <.link 
             href={~p"/products/new"} 
             class="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
@@ -273,8 +365,53 @@
 
 <!-- ========== MAIN CONTENT ========== -->
 <main class="min-h-screen bg-gray-50">
-  <.flash_group flash={@flash} />
-  <%= @inner_content %>
+  <%= if cu && cu.role == "artisan" && cu.artisan_status == "approved" && assigns[:show_artisan_sidebar] do %>
+    <div class="flex gap-6 px-4 sm:px-6 lg:px-8 py-6 items-stretch" style="min-height: calc(100vh - 64px)">
+      <aside class="hidden md:block w-64 shrink-0" style="min-height: calc(100vh - 64px)">
+        <nav class="bg-white border rounded-lg p-4 space-y-1" style="min-height: calc(100vh - 64px)">
+          <.link href={~p"/artisan/dashboard"} class="block px-3 py-2 rounded hover:bg-gray-50">Dashboard</.link>
+          <.link href={~p"/products"} class="block px-3 py-2 rounded hover:bg-gray-50">My Products</.link>
+          <.link href={~p"/orders"} class="block px-3 py-2 rounded hover:bg-gray-50">Orders</.link>
+          <.link href={~p"/messages?from=dashboard"} class="block px-3 py-2 rounded hover:bg-gray-50">Messages</.link>
+          <.link href={~p"/users/settings?from=dashboard"} class="block px-3 py-2 rounded hover:bg-gray-50">Settings</.link>
+          <div :if={!assigns[:hide_back_to_browse]} class="pt-2 mt-2 border-t">
+            <.link href={~p"/browse"} class="block px-3 py-2 rounded hover:bg-gray-50">Back to Browse</.link>
+          </div>
+        </nav>
+      </aside>
+      <section class="flex-1">
+        <.flash_group flash={@flash} />
+        <%= @inner_content %>
+      </section>
+    </div>
+  <% else %>
+  <%= if ad && assigns[:show_admin_sidebar] != false do %>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-6">
+      <aside class="hidden md:block w-64 shrink-0">
+        <nav class="bg-white border rounded-lg p-4 space-y-1 sticky top-20">
+          <.link href={~p"/admin/dashboard"} class="block px-3 py-2 rounded hover:bg-gray-50">Dashboard</.link>
+          <.link href={~p"/admin/artisans"} class="block px-3 py-2 rounded hover:bg-gray-50">Artisans</.link>
+          <.link href={~p"/admin/buyers"} class="block px-3 py-2 rounded hover:bg-gray-50">Buyers</.link>
+          <.link href={~p"/admin/products"} class="block px-3 py-2 rounded hover:bg-gray-50">Products</.link>
+          <.link href={~p"/admin/orders"} class="block px-3 py-2 rounded hover:bg-gray-50">Orders</.link>
+          <.link href={~p"/admin/reviews"} class="block px-3 py-2 rounded hover:bg-gray-50">Reviews</.link>
+          <.link href={~p"/admin/analytics"} class="block px-3 py-2 rounded hover:bg-gray-50">Analytics</.link>
+          <.link href={~p"/admin/settings"} class="block px-3 py-2 rounded hover:bg-gray-50">Settings</.link>
+          <div class="pt-2 mt-2 border-t">
+            <.link href={~p"/browse"} class="block px-3 py-2 rounded hover:bg-gray-50">Back to Browse</.link>
+          </div>
+        </nav>
+      </aside>
+      <section class="flex-1">
+        <.flash_group flash={@flash} />
+        <%= @inner_content %>
+      </section>
+    </div>
+  <% else %>
+    <.flash_group flash={@flash} />
+    <%= @inner_content %>
+  <% end %>
+  <% end %>
 </main>
 <!-- ========== END MAIN CONTENT ========== -->
 

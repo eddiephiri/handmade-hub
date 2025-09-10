@@ -6,6 +6,7 @@ defmodule HandmadeHub.Notifications.EmailQueue do
 
   schema "email_queue" do
     field :to, :string
+    field :reply_to, :string
     field :subject, :string
     field :text_body, :string
     field :type, :string, default: "generic"
@@ -23,6 +24,7 @@ defmodule HandmadeHub.Notifications.EmailQueue do
     queue
     |> cast(attrs, [
       :to,
+      :reply_to,
       :subject,
       :text_body,
       :type,

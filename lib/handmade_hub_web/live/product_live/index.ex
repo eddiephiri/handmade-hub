@@ -1,5 +1,6 @@
 defmodule HandmadeHubWeb.ProductLive.Index do
   use HandmadeHubWeb, :live_view
+  import HandmadeHubWeb.FormatHelpers
 
   alias HandmadeHub.Catalog
   alias HandmadeHub.Catalog.Product
@@ -7,7 +8,7 @@ defmodule HandmadeHubWeb.ProductLive.Index do
   @impl true
   def mount(_params, _session, socket) do
     # Restrict to artisans only
-    if socket.assigns.current_user.role != "artisan" do
+    if socket.assigns.current_user.role != "artisan" or socket.assigns.current_user.artisan_status != "approved" do
       {:halt, redirect(socket, to: ~p"/")}
     else
       {:ok, stream(socket, :products, Catalog.list_user_products(socket.assigns.current_user.id))}
@@ -17,6 +18,11 @@ defmodule HandmadeHubWeb.ProductLive.Index do
   @impl true
   def handle_params(params, _url, socket) do
     {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  end
+  defp apply_action(socket, :show, %{"id" => _id}) do
+    # This LiveView does not implement :show; redirect back to index
+    socket
+    |> push_navigate(to: ~p"/products")
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do

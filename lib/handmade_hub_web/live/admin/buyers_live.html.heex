@@ -1,0 +1,53 @@
+<div class="max-w-6xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">Buyers</h1>
+
+  <div class="flex items-center gap-3 mb-4">
+    <form phx-change="search">
+      <.input name="q" value={@search} placeholder="Search buyers..." phx-debounce="400" />
+    </form>
+    <form phx-change="filter">
+      <select name="status" class="border rounded px-2 py-1" value={@status}>
+        <option value="all">All</option>
+        <option value="active">Active</option>
+        <option value="suspended">Suspended</option>
+      </select>
+    </form>
+  </div>
+
+  <div class="bg-white border rounded">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 text-left">
+          <th class="p-3">Name</th>
+          <th class="p-3">Email</th>
+          <th class="p-3">Status</th>
+          <th class="p-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for b <- @buyers do %>
+          <tr class="border-t">
+            <td class="p-3"><.link navigate={~p"/admin/buyers/#{b.id}"}><%= b.name || "—" %></.link></td>
+            <td class="p-3"><%= b.email %></td>
+            <td class="p-3">
+              <%= if is_nil(b.suspended_at) do %>
+                <span class="text-green-700">Active</span>
+              <% else %>
+                <span class="text-red-700">Suspended</span>
+              <% end %>
+            </td>
+            <td class="p-3 text-right">
+              <%= if is_nil(b.suspended_at) do %>
+                <button phx-click="toggle_suspend" phx-value-id={b.id} phx-value-suspend="true" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Suspend</button>
+              <% else %>
+                <button phx-click="toggle_suspend" phx-value-id={b.id} phx-value-suspend="false" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Unsuspend</button>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+

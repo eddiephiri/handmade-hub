@@ -1,0 +1,57 @@
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">Products</h1>
+
+  <div class="flex items-center gap-3 mb-4">
+    <form phx-change="search">
+      <.input name="q" value={@search} placeholder="Search products..." phx-debounce="400" />
+    </form>
+    <form phx-change="filter_status">
+      <select name="status" class="border rounded px-2 py-1" value={@status}>
+        <option value="all">All</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </form>
+    <form phx-change="filter_category">
+      <.input name="category" value={@category} placeholder="Category" phx-debounce="400" />
+    </form>
+  </div>
+
+  <div class="bg-white border rounded">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 text-left">
+          <th class="p-3">Name</th>
+          <th class="p-3">Artisan</th>
+          <th class="p-3">Status</th>
+          <th class="p-3">Category</th>
+          <th class="p-3">Price</th>
+          <th class="p-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for p <- @products do %>
+          <tr class="border-t">
+            <td class="p-3"><.link navigate={~p"/admin/products/#{p.id}"}><%= p.name %></.link></td>
+            <td class="p-3"><%= if p.artisan, do: (p.artisan.name || p.artisan.email), else: "—" %></td>
+            <td class="p-3"><%= String.capitalize(p.approval_status) %></td>
+            <td class="p-3"><%= p.category || "—" %></td>
+            <td class="p-3"><%= HandmadeHubWeb.FormatHelpers.format_currency(p.price) %></td>
+            <td class="p-3 space-x-2 text-right">
+              <%= if p.approval_status != "approved" do %>
+                <button phx-click="approve" phx-value-id={p.id} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Approve</button>
+              <% end %>
+              <%= if p.approval_status != "rejected" do %>
+                <button phx-click="reject" phx-value-id={p.id} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100">Reject</button>
+              <% end %>
+              <button phx-click="remove" phx-value-id={p.id} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Remove</button>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+

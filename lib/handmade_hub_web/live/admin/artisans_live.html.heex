@@ -1,0 +1,49 @@
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-6">Artisans</h1>
+
+  <div class="flex items-center gap-4 mb-4">
+    <form phx-change="search">
+      <input type="text" name="q" value={@search} placeholder="Search name or email" class="border rounded px-3 py-2" />
+    </form>
+    <form phx-change="filter">
+      <select name="status" class="border rounded px-3 py-2" value={@status}>
+        <option value="">All</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="suspended">Suspended</option>
+      </select>
+    </form>
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
+    <table class="min-w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="text-left p-3">Name</th>
+          <th class="text-left p-3">Email</th>
+          <th class="text-left p-3">Status</th>
+          <th class="text-left p-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for a <- @artisans do %>
+          <tr class="border-t">
+            <td class="p-3"><%= a.name || "—" %></td>
+            <td class="p-3"><%= a.email %></td>
+            <td class="p-3"><span class="px-2 py-1 rounded bg-gray-100"><%= a.artisan_status %></span></td>
+            <td class="p-3 space-x-2">
+              <.link navigate={~p"/admin/artisans/#{a.id}"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">View</.link>
+              <button phx-click="set_status" phx-value-id={a.id} phx-value-status="approved" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Approve</button>
+              <button phx-click="set_status" phx-value-id={a.id} phx-value-status="rejected" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Reject</button>
+              <button phx-click="set_status" phx-value-id={a.id} phx-value-status="suspended" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100">Suspend</button>
+              <button phx-click="set_status" phx-value-id={a.id} phx-value-status="pending" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-zinc-50 text-zinc-700 hover:bg-zinc-100">Reset</button>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+

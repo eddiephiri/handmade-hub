@@ -1,0 +1,19 @@
+<div class="max-w-3xl mx-auto p-6">
+  <.link navigate={~p"/admin/admins"} class="text-sm text-indigo-600">← Back</.link>
+  <h1 class="text-2xl font-bold mt-2 mb-6">Edit Admin</h1>
+  <.simple_form for={@form} as={:admin} phx-submit="save">
+    <.input field={@form[:username]} label="Username" />
+    <.input field={@form[:email]} label="Email" />
+    <label class="block text-sm font-medium text-gray-700">Role</label>
+    <select name="admin[role]" class="mt-1 border rounded px-2 py-1">
+      <%= for r <- ["super_admin", "moderator", "support", "analyst"] do %>
+        <option value={r} selected={@admin.role == r}><%= r %></option>
+      <% end %>
+    </select>
+    <:actions>
+      <.button>Save</.button>
+    </:actions>
+  </.simple_form>
+</div>
+
+

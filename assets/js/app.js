@@ -25,9 +25,52 @@ import "preline/preline"
 import Alpine from "alpinejs"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+const Hooks = {}
+
+Hooks.AutoHideFlash = {
+  mounted() {
+    const delayMs = parseInt(this.el.getAttribute("data-autohide-ms") || "4000", 10)
+    this._timer = setTimeout(() => {
+      // Trigger the same action as clicking to clear the flash and hide
+      this.pushEvent("lv:clear-flash", {key: this.el.id?.includes("error") ? "error" : "info"})
+      this.el.dispatchEvent(new Event("click", {bubbles: true}))
+    }, delayMs)
+  },
+  destroyed() {
+    if (this._timer) clearTimeout(this._timer)
+  }
+}
+
+Hooks.StarRating = {
+  mounted() {
+    this.stars = Array.from(this.el.querySelectorAll('[data-star]'))
+    this.inputs = Array.from(this.el.querySelectorAll('input[type="radio"][name]'))
+    this.value = 0
+    this.stars.forEach((star, idx) => {
+      star.addEventListener('mouseenter', () => this.paint(idx + 1))
+      star.addEventListener('mouseleave', () => this.paint(this.value))
+      star.addEventListener('click', (e) => {
+        e.preventDefault()
+        this.value = idx + 1
+        const input = this.inputs.find(i => i.value == String(this.value))
+        if (input) input.checked = true
+        this.paint(this.value)
+      })
+    })
+    this.paint(0)
+  },
+  paint(n) {
+    this.stars.forEach((star, i) => {
+      star.classList.toggle('text-yellow-400', i < n)
+      star.classList.toggle('text-gray-300', i >= n)
+    })
+  }
+}
+
 let liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken}
+  params: {_csrf_token: csrfToken},
+  hooks: Hooks
 })
 
 // Show progress bar on live navigation and form submits

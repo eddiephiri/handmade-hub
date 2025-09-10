@@ -12,7 +12,7 @@ defmodule HandmadeHub.Shopping do
   Gets or creates a cart for a user or session.
   """
   def get_or_create_cart(user_id, session_id) do
-    cart = 
+    cart =
       if user_id do
         # For authenticated users, find by user_id
         Repo.one(from c in Cart, where: c.user_id == ^user_id and c.status == "active")
@@ -55,7 +55,7 @@ defmodule HandmadeHub.Shopping do
   """
   def add_to_cart(cart_id, product_id, quantity \\ 1) do
     product = Catalog.get_product!(product_id)
-    
+
     # Check if product is in stock
     if product.quantity < quantity do
       {:error, :insufficient_stock}
@@ -77,7 +77,7 @@ defmodule HandmadeHub.Shopping do
             price: product.price
           })
           |> Repo.insert()
-        
+
         item ->
           # Update existing cart item quantity
           new_quantity = item.quantity + quantity
@@ -96,7 +96,7 @@ defmodule HandmadeHub.Shopping do
   def update_cart_item_quantity(cart_item_id, quantity) when quantity > 0 do
     cart_item = Repo.get!(CartItem, cart_item_id)
     product = Catalog.get_product!(cart_item.product_id)
-    
+
     if product.quantity < quantity do
       {:error, :insufficient_stock}
     else
@@ -140,7 +140,7 @@ defmodule HandmadeHub.Shopping do
   """
   def calculate_cart_total(cart_id) do
     cart = get_cart_with_items(cart_id)
-    
+
     if cart && cart.cart_items do
       cart.cart_items
       |> Enum.reduce(Decimal.new(0), fn item, acc ->
@@ -157,16 +157,16 @@ defmodule HandmadeHub.Shopping do
   """
   def merge_carts(guest_cart_id, user_id) do
     guest_cart = get_cart_with_items(guest_cart_id)
-    
+
     if guest_cart && guest_cart.cart_items && length(guest_cart.cart_items) > 0 do
       # Get or create user cart
       {:ok, user_cart} = get_or_create_cart(user_id, nil)
-      
+
       # Move items from guest cart to user cart
       Enum.each(guest_cart.cart_items, fn item ->
         add_to_cart(user_cart.id, item.product_id, item.quantity)
       end)
-      
+
       # Mark guest cart as abandoned
       guest_cart
       |> Cart.changeset(%{status: "abandoned"})
@@ -179,7 +179,7 @@ defmodule HandmadeHub.Shopping do
   """
   def convert_cart_to_order(cart_id) do
     cart = Repo.get!(Cart, cart_id)
-    
+
     cart
     |> Cart.changeset(%{status: "converted"})
     |> Repo.update()
@@ -193,6 +193,15 @@ defmodule HandmadeHub.Shopping do
     |> where([ci], ci.cart_id == ^cart_id)
     |> preload([:product])
     |> Repo.all()
+  end
+
+  @doc """
+  Gets a single cart item by cart and product.
+  """
+  def get_cart_item_by_cart_and_product(cart_id, product_id) do
+    CartItem
+    |> where([ci], ci.cart_id == ^cart_id and ci.product_id == ^product_id)
+    |> Repo.one()
   end
 
   @doc """

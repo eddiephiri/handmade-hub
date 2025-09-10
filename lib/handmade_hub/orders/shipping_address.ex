@@ -12,9 +12,9 @@ defmodule HandmadeHub.Orders.ShippingAddress do
     field :postal_code, :string
     field :country, :string, default: "Zambia"
     field :delivery_instructions, :string
-    
+
     belongs_to :order, HandmadeHub.Orders.Order
-    
+
     timestamps(type: :utc_datetime)
   end
 
@@ -22,8 +22,8 @@ defmodule HandmadeHub.Orders.ShippingAddress do
   def changeset(shipping_address, attrs) do
     shipping_address
     |> cast(attrs, [
-      :order_id, :recipient_name, :phone_number, 
-      :address_line_1, :address_line_2, :city, 
+      :order_id, :recipient_name, :phone_number,
+      :address_line_1, :address_line_2, :city,
       :province, :postal_code, :country, :delivery_instructions
     ])
     |> validate_required([:recipient_name, :phone_number, :address_line_1, :city])
@@ -39,7 +39,7 @@ defmodule HandmadeHub.Orders.ShippingAddress do
   def provinces do
     [
       "Central",
-      "Copperbelt", 
+      "Copperbelt",
       "Eastern",
       "Luapula",
       "Lusaka",
@@ -52,26 +52,30 @@ defmodule HandmadeHub.Orders.ShippingAddress do
   end
 
   @doc """
-  Common cities in Zambia for autocomplete
+  Lusaka Suburbs / Residential Areas for delivery selection
   """
   def common_cities do
     [
-      "Lusaka",
-      "Kitwe",
-      "Ndola",
-      "Kabwe",
-      "Chingola",
-      "Mufulira",
-      "Livingstone",
-      "Luanshya",
-      "Kasama",
-      "Chipata",
-      "Kalulushi",
-      "Mazabuka",
-      "Solwezi",
-      "Chililabombwe",
-      "Mongu",
-      "Kafue"
+      "Makeni",
+      "Woodlands",
+      "Northmead",
+      "Kabulonga",
+      "Chalala",
+      "Kanyama",
+      "Chilenje",
+      "Roma",
+      "Rhodespark",
+      "Bauleni",
+      "Chelston",
+      "Garden",
+      "Matero",
+      "Ibex Hill",
+      "Longacres",
+      "Libala",
+      "Kaunda Square",
+      "Avondale",
+      "Olympia",
+      "Kalundu"
     ]
   end
 end

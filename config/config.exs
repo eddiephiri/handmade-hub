@@ -9,7 +9,12 @@ import Config
 
 config :handmade_hub,
   ecto_repos: [HandmadeHub.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  # Session validity (in minutes) for server-side tokens. Default 60 minutes.
+  # Override per environment in dev.exs/prod.exs as needed.
+  session_validity_minutes: 60,
+  # Remember-me cookie max_age (in seconds). Default 60 days.
+  remember_me_max_age: 60 * 60 * 24 * 60
 
 # Configures the endpoint
 config :handmade_hub, HandmadeHubWeb.Endpoint,

@@ -1,0 +1,35 @@
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">Admins</h1>
+  <div class="flex items-center gap-3 mb-4">
+    <form phx-change="search">
+      <.input name="q" value={@search} placeholder="Search admins..." phx-debounce="400" />
+    </form>
+  </div>
+  <div class="bg-white border rounded">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 text-left">
+          <th class="p-3">Username</th>
+          <th class="p-3">Email</th>
+          <th class="p-3">Role</th>
+          <th class="p-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for a <- @admins do %>
+          <tr class="border-t">
+            <td class="p-3"><%= a.username %></td>
+            <td class="p-3"><%= a.email %></td>
+            <td class="p-3"><%= a.role %></td>
+            <td class="p-3 space-x-2">
+              <.link navigate={~p"/admin/admins/#{a.id}"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Edit</.link>
+              <button phx-click="delete" phx-value-id={a.id} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Delete</button>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+

@@ -57,6 +57,7 @@ defmodule HandmadeHub.Notifications do
       Email.new()
       |> Email.to(eq.to)
       |> Email.from({"HandmadeHub", "contact@handmadehub.com"})
+      |> maybe_reply_to(eq.reply_to)
       |> Email.subject(eq.subject)
       |> Email.text_body(eq.text_body)
 
@@ -84,6 +85,10 @@ defmodule HandmadeHub.Notifications do
         end
     end
   end
+
+  defp maybe_reply_to(email, nil), do: email
+  defp maybe_reply_to(email, ""), do: email
+  defp maybe_reply_to(email, addr), do: Email.reply_to(email, addr)
 
   defp now do
     DateTime.utc_now() |> DateTime.truncate(:second)

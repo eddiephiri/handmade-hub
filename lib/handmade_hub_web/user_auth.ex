@@ -6,12 +6,12 @@ defmodule HandmadeHubWeb.UserAuth do
 
   alias HandmadeHub.Accounts
 
-  # Make the remember me cookie valid for 60 days.
-  # If you want bump or reduce this value, also change
-  # the token expiry itself in UserToken.
-  @max_age 60 * 60 * 24 * 60
+  # Make the remember me cookie validity configurable (defaults to 60 days).
+  defp remember_me_max_age, do: Application.get_env(:handmade_hub, :remember_me_max_age, 60 * 60 * 24 * 60)
   @remember_me_cookie "_handmade_hub_web_user_remember_me"
-  @remember_me_options [sign: true, max_age: @max_age, same_site: "Lax"]
+  defp remember_me_options do
+    [sign: true, max_age: remember_me_max_age(), same_site: "Lax"]
+  end
 
   @doc """
   Logs the user in.
@@ -27,17 +27,40 @@ defmodule HandmadeHubWeb.UserAuth do
   """
   def log_in_user(conn, user, params \\ %{}) do
     token = Accounts.generate_user_session_token(user)
-    user_return_to = get_session(conn, :user_return_to)
+    user_return_to =
+      case get_session(conn, :user_return_to) do
+        # Prevent buyers from being redirected into artisan-only areas after login
+        path when is_binary(path) ->
+          if user.role != "artisan" and String.starts_with?(path, ["/artisan", "/products"]) do
+            "/buyer/dashboard"
+          else
+            path
+          end
+        other ->
+          other
+      end
+
+    # Capture any previous LiveView session id before we renew/clear the session
+    prev_live_socket_id = get_session(conn, :live_socket_id)
 
     conn
     |> renew_session()
+    |> maybe_disconnect_previous_session(prev_live_socket_id)
     |> put_token_in_session(token)
     |> maybe_write_remember_me_cookie(token, params)
     |> redirect(to: user_return_to || signed_in_path(conn))
   end
 
+  # If there is a previous LiveView session id, broadcast a disconnect so that
+  # prior tabs/sessions are closed when a new login occurs.
+  defp maybe_disconnect_previous_session(conn, nil), do: conn
+  defp maybe_disconnect_previous_session(conn, live_socket_id) do
+    HandmadeHubWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
+    conn
+  end
+
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}) do
-    put_resp_cookie(conn, @remember_me_cookie, token, @remember_me_options)
+    put_resp_cookie(conn, @remember_me_cookie, token, remember_me_options())
   end
 
   defp maybe_write_remember_me_cookie(conn, _token, _params) do

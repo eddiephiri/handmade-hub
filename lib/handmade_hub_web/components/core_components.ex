@@ -112,6 +112,8 @@ defmodule HandmadeHubWeb.CoreComponents do
     <div
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
+      phx-hook="AutoHideFlash"
+      data-autohide-ms="5000"
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
       class={[
@@ -272,6 +274,7 @@ defmodule HandmadeHubWeb.CoreComponents do
   attr :name, :any
   attr :label, :string, default: nil
   attr :value, :any
+  attr :class, :string, default: nil
 
   attr :type, :string,
     default: "text",
@@ -378,8 +381,9 @@ defmodule HandmadeHubWeb.CoreComponents do
             id={@id}
             value={Phoenix.HTML.Form.normalize_value(@type, @value)}
             class={
-              "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 pr-10 " <>
-              if @errors == [], do: "border-zinc-300 focus:border-zinc-400", else: "border-rose-400 focus:border-rose-400"
+              ("mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 pr-10 " <>
+              if @errors == [], do: "border-zinc-300 focus:border-zinc-400", else: "border-rose-400 focus:border-rose-400") <>
+              (if @class, do: " " <> @class, else: "")
             }
             {@rest}
           />
@@ -409,8 +413,9 @@ defmodule HandmadeHubWeb.CoreComponents do
           id={@id}
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={
-            "mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 " <>
-            if @errors == [], do: "border-zinc-300 focus:border-zinc-400", else: "border-rose-400 focus:border-rose-400"
+            ("mt-2 block w-full rounded-lg text-zinc-900 focus:ring-0 sm:text-sm sm:leading-6 " <>
+            if @errors == [], do: "border-zinc-300 focus:border-zinc-400", else: "border-rose-400 focus:border-rose-400") <>
+            (if @class, do: " " <> @class, else: "")
           }
           {@rest}
         />

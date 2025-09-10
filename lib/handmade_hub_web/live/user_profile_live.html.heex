@@ -1,4 +1,11 @@
 <div class="mx-auto max-w-lg mt-10">
+  <.link 
+    navigate={~p"/buyer/dashboard"}
+    class="inline-flex items-center bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 font-medium"
+  >
+    <.icon name="hero-arrow-left" class="w-4 h-4 mr-2" />
+    Back to Dashboard
+  </.link>
   <.header class="mb-6 text-center">
     Edit Your Profile
   </.header>
@@ -12,12 +19,10 @@
     <.input field={@form[:name]} type="text" label="Name" />
     <.input field={@form[:bio]} type="textarea" label="Bio" />
 
-    <.input
-      field={@form[:profile_image]}
-      type="file"
-      label="Profile Image"
-      accept="image/*"
-    />
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-1">Profile Image</label>
+      <.live_file_input upload={@uploads.profile_image} />
+    </div>
 
     <:actions>
       <.button class="w-full">Save Changes</.button>

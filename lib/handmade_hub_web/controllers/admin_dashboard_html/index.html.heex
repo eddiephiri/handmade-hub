@@ -1,0 +1,46 @@
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-6">Admin Dashboard</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+      <div class="text-lg font-semibold mb-1">Users</div>
+      <p class="text-gray-600 mb-3">Manage artisans and buyers</p>
+      <div class="space-x-2">
+        <.link href={~p"/admin/artisans"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Artisans</.link>
+        <.link href={~p"/admin/buyers"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Buyers</.link>
+        <.link href={~p"/admin/admins"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Admins</.link>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+      <div class="text-lg font-semibold mb-1">Products</div>
+      <p class="text-gray-600 mb-3">Review and moderate listings</p>
+      <.link href={~p"/admin/products"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Open</.link>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+      <div class="text-lg font-semibold mb-1">Orders</div>
+      <p class="text-gray-600 mb-3">Resolve disputes and refunds</p>
+      <.link href={~p"/admin/orders"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Open</.link>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+      <div class="text-lg font-semibold mb-1">Reviews</div>
+      <p class="text-gray-600 mb-3">Moderate user-generated content</p>
+      <.link href={~p"/admin/reviews"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Open</.link>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+      <div class="text-lg font-semibold mb-1">Settings</div>
+      <p class="text-gray-600 mb-3">Manage system-wide configuration</p>
+      <.link href={~p"/admin/settings"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Open</.link>
+    </div>
+
+    <div class="bg-white rounded-lg border border-gray-100 p-4 shadow-sm">
+      <div class="text-lg font-semibold mb-1">Analytics</div>
+      <p class="text-gray-600 mb-3">Usage, revenue, and activity metrics</p>
+      <.link href={~p"/admin/analytics"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">Open</.link>
+    </div>
+  </div>
+</div>
+

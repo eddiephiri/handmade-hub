@@ -1,0 +1,62 @@
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">Reviews</h1>
+
+  <div class="flex items-center gap-3 mb-4">
+    <form phx-change="search">
+      <.input name="q" value={@search} placeholder="Search comments..." phx-debounce="400" />
+    </form>
+    <form phx-change="filter" class="flex items-center gap-2">
+      <select name="visibility" class="border rounded px-2 py-1" value={@visibility}>
+        <option value="all">All</option>
+        <option value="visible">Visible</option>
+        <option value="hidden">Hidden</option>
+      </select>
+      <select name="flagged" class="border rounded px-2 py-1" value={@flagged}>
+        <option value="all">All</option>
+        <option value="flagged">Flagged</option>
+        <option value="unflagged">Unflagged</option>
+      </select>
+    </form>
+  </div>
+
+  <div class="bg-white border rounded">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-gray-50 text-left">
+          <th class="p-3">User</th>
+          <th class="p-3">Rating</th>
+          <th class="p-3">Comment</th>
+          <th class="p-3">Visible</th>
+          <th class="p-3">Flagged</th>
+          <th class="p-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= for r <- @reviews do %>
+          <tr class="border-t">
+            <td class="p-3"><%= if r.user, do: (r.user.name || r.user.email), else: "—" %></td>
+            <td class="p-3"><%= r.rating %> ⭐</td>
+            <td class="p-3 max-w-xl whitespace-pre-line"><%= r.comment %></td>
+            <td class="p-3">
+              <select phx-change="toggle_visible" phx-value-id={r.id} name="visible" class="border rounded px-2 py-1">
+                <option value="true" selected={r.visible == true}>Yes</option>
+                <option value="false" selected={r.visible == false}>No</option>
+              </select>
+            </td>
+            <td class="p-3">
+              <select phx-change="toggle_flag" phx-value-id={r.id} name="flagged" class="border rounded px-2 py-1">
+                <option value="true" selected={r.flagged == true}>Yes</option>
+                <option value="false" selected={r.flagged == false}>No</option>
+              </select>
+            </td>
+            <td class="p-3">
+              <button phx-click="delete" phx-value-id={r.id} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Delete</button>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+

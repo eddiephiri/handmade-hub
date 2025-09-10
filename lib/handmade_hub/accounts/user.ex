@@ -9,6 +9,8 @@ defmodule HandmadeHub.Accounts.User do
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
     field :role, :string, default: "buyer"
+    field :artisan_status, :string, default: "pending"
+    field :suspended_at, :utc_datetime
     field :name, :string
     field :bio, :string
     field :profile_image, :string
@@ -45,6 +47,7 @@ defmodule HandmadeHub.Accounts.User do
     |> validate_email(opts)
     |> validate_password(opts)
     |> validate_inclusion(:role, ["buyer", "artisan"])
+    |> validate_inclusion(:artisan_status, ["pending", "approved", "rejected", "suspended"])
     |> validate_required([:role])
   end
 

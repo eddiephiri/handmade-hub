@@ -60,6 +60,63 @@ defmodule HandmadeHub.Accounts do
   """
   def get_user!(id), do: Repo.get!(User, id)
 
+  # Admin: artisan management
+  def list_artisans(opts \\ []) do
+    search = Keyword.get(opts, :search)
+    status = Keyword.get(opts, :artisan_status)
+
+    User
+    |> where([u], u.role == "artisan")
+    |> then(fn q -> if status, do: where(q, [u], u.artisan_status == ^status), else: q end)
+    |> then(fn q -> if search && search != "", do: where(q, [u], ilike(u.email, ^"%#{search}%") or ilike(u.name, ^"%#{search}%")), else: q end)
+    |> order_by([u], asc: u.inserted_at)
+    |> Repo.all()
+  end
+
+  # Admin: buyer management
+  def list_buyers(opts \\ []) do
+    search = Keyword.get(opts, :search)
+    suspended = Keyword.get(opts, :suspended)
+
+    User
+    |> where([u], u.role == "buyer" or is_nil(u.role))
+    |> then(fn q ->
+      case suspended do
+        true -> where(q, [u], not is_nil(u.suspended_at))
+        false -> where(q, [u], is_nil(u.suspended_at))
+        _ -> q
+      end
+    end)
+    |> then(fn q -> if search && search != "", do: where(q, [u], ilike(u.email, ^"%#{search}%") or ilike(u.name, ^"%#{search}%")), else: q end)
+    |> order_by([u], asc: u.inserted_at)
+    |> Repo.all()
+  end
+
+  def update_buyer_suspension(%User{} = user, suspend?) when is_boolean(suspend?) do
+    changes =
+      if suspend? do
+        %{suspended_at: DateTime.utc_now()}
+      else
+        %{suspended_at: nil}
+      end
+
+    user
+    |> Ecto.Changeset.change(changes)
+    |> Repo.update()
+  end
+
+  def update_artisan_status(%User{} = user, new_status) when new_status in ["pending", "approved", "rejected", "suspended"] do
+    changes =
+      case new_status do
+        "suspended" -> %{artisan_status: new_status, suspended_at: DateTime.utc_now()}
+        _ -> %{artisan_status: new_status, suspended_at: nil}
+      end
+
+    user
+    |> Ecto.Changeset.change(changes)
+    |> Repo.update()
+  end
+
   ## User registration
 
   @doc """
@@ -228,6 +285,9 @@ defmodule HandmadeHub.Accounts do
   """
   def generate_user_session_token(user) do
     {token, user_token} = UserToken.build_session_token(user)
+
+    # Enforce single active session: remove any existing session tokens then insert a new one
+    Repo.delete_all(UserToken.by_user_and_contexts_query(user, ["session"]))
     Repo.insert!(user_token)
     token
   end
@@ -246,6 +306,55 @@ defmodule HandmadeHub.Accounts do
   def delete_user_session_token(token) do
     Repo.delete_all(UserToken.by_token_and_context_query(token, "session"))
     :ok
+  end
+
+  @doc """
+  Deletes a user after verifying the provided current password.
+
+  Returns {:ok, :deleted} on success or {:error, :invalid_password}.
+  """
+  def delete_user(%User{} = user, current_password) when is_binary(current_password) do
+    if User.valid_password?(user, current_password) do
+      Ecto.Multi.new()
+      |> Ecto.Multi.delete_all(:tokens, UserToken.by_user_and_contexts_query(user, :all))
+      |> Ecto.Multi.delete(:user, user)
+      |> Repo.transaction()
+      |> case do
+        {:ok, _} -> {:ok, :deleted}
+        {:error, _op, _reason, _changes} -> {:error, :delete_failed}
+      end
+    else
+      {:error, :invalid_password}
+    end
+  end
+
+  @doc """
+  Lists recent login sessions for a user, ordered newest first.
+
+  Options:
+  - :limit (integer) default 10
+  """
+  def list_user_login_sessions(%User{id: user_id}, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 10)
+
+    UserToken
+    |> where([t], t.user_id == ^user_id and t.context == "session")
+    |> order_by([t], desc: t.inserted_at)
+    |> limit(^limit)
+    |> Repo.all()
+  end
+
+  # Admin analytics helpers
+  def count_users do
+    Repo.aggregate(User, :count)
+  end
+
+  def count_artisans do
+    Repo.aggregate(from(u in User, where: u.role == "artisan"), :count)
+  end
+
+  def count_buyers do
+    Repo.aggregate(from(u in User, where: is_nil(u.role) or u.role == "buyer"), :count)
   end
 
   ## Confirmation

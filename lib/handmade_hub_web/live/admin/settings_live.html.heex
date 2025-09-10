@@ -1,0 +1,30 @@
+<div class="max-w-3xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-6">System Settings</h1>
+  <.simple_form for={to_form(%{}, as: :settings)} phx-submit="save">
+    <div class="grid grid-cols-1 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Maintenance Mode</label>
+        <select name="maintenance_mode" class="mt-1 border rounded px-2 py-1">
+          <option value="false" selected={@maintenance_mode == false}>Off</option>
+          <option value="true" selected={@maintenance_mode == true}>On</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Payment Gateway</label>
+        <select name="payment_gateway" class="mt-1 border rounded px-2 py-1">
+          <option value="stripe" selected={@payment_gateway == "stripe"}>Stripe</option>
+          <option value="pawapay" selected={@payment_gateway == "pawapay"}>pawaPay</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Commission Rate (%)</label>
+        <input type="number" name="commission_rate" min="0" max="100" value={@commission_rate} class="mt-1 border rounded px-2 py-1 w-32" />
+      </div>
+    </div>
+    <:actions>
+      <.button>Save Settings</.button>
+    </:actions>
+  </.simple_form>
+</div>
+
+

@@ -1,5 +1,6 @@
 defmodule HandmadeHubWeb.OrderLive.Index do
   use HandmadeHubWeb, :live_view
+  import HandmadeHubWeb.FormatHelpers
 
   alias HandmadeHub.Orders
   alias HandmadeHub.Orders.Order
@@ -8,12 +9,13 @@ defmodule HandmadeHubWeb.OrderLive.Index do
   def mount(_params, _session, socket) do
     if socket.assigns.current_user do
       orders = Orders.list_user_orders(socket.assigns.current_user.id)
-      
+
       {:ok,
        socket
        |> assign(:page_title, "My Orders")
        |> assign(:orders, orders)
-       |> assign(:filter_status, "all")}
+       |> assign(:filter_status, "all")
+       |> assign(:show_artisan_sidebar, true)}
     else
       {:ok,
        socket
@@ -36,7 +38,7 @@ defmodule HandmadeHubWeb.OrderLive.Index do
   @impl true
   def handle_event("filter_orders", %{"status" => status}, socket) do
     orders = filter_orders_by_status(socket.assigns.current_user.id, status)
-    
+
     {:noreply,
      socket
      |> assign(:orders, orders)

@@ -11,7 +11,9 @@ defmodule HandmadeHub.Accounts.UserToken do
   @reset_password_validity_in_days 1
   @confirm_validity_in_days 7
   @change_email_validity_in_days 7
-  @session_validity_in_days 60
+  # Session validity in minutes (configurable). Defaults to 60 minutes.
+  # Use `config :handmade_hub, :session_validity_minutes, 60 * 24` to override.
+  defp session_validity_minutes, do: Application.get_env(:handmade_hub, :session_validity_minutes, 60)
 
   schema "users_tokens" do
     field :token, :binary
@@ -55,10 +57,11 @@ defmodule HandmadeHub.Accounts.UserToken do
   not expired (after @session_validity_in_days).
   """
   def verify_session_token_query(token) do
+    ttl_minutes = session_validity_minutes()
     query =
       from token in by_token_and_context_query(token, "session"),
         join: user in assoc(token, :user),
-        where: token.inserted_at > ago(@session_validity_in_days, "day"),
+        where: token.inserted_at > ago(^ttl_minutes, "minute"),
         select: user
 
     {:ok, query}

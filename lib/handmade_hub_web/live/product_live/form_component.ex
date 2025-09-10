@@ -29,7 +29,7 @@ defmodule HandmadeHubWeb.ProductLive.FormComponent do
       >
         <.input field={@form[:name]} type="text" label="Name" />
         <.input field={@form[:description]} type="text" label="Description" />
-        <.input field={@form[:category]} type="select" label="Category" 
+        <.input field={@form[:category]} type="select" label="Category"
           options={[
             {"Jewelry", "jewelry"},
             {"Pottery", "pottery"},
@@ -154,18 +154,21 @@ defmodule HandmadeHubWeb.ProductLive.FormComponent do
         {:ok, "/uploads/products/#{filename}"}
       end)
 
-    # Create product image records
+    # Decide primary logic: only mark first new image as primary if product has no primary yet
+    existing_images = Catalog.list_product_images(product_id)
+    has_primary = Enum.any?(existing_images, & &1.is_primary)
+
     uploaded_files
     |> Enum.with_index(1)
     |> Enum.map(fn {image_url, index} ->
-      is_primary = index == 1  # First image is primary
+      is_primary = if has_primary, do: false, else: index == 1
       case Catalog.create_product_image(%{
         product_id: product_id,
         image_url: image_url,
         is_primary: is_primary
       }) do
         {:ok, image} -> image
-        {:error, _} -> nil
+        {:error, _changeset} -> nil
       end
     end)
     |> Enum.reject(&is_nil/1)

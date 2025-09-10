@@ -2,9 +2,22 @@
   <!-- Dashboard Header -->
   <div class="bg-white shadow-sm border-b">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="py-6">
-        <h1 class="text-3xl font-bold text-gray-900">Welcome back, <%= @current_user.name || @current_user.email %>!</h1>
-        <p class="mt-2 text-gray-600">Here's an overview of your shopping activity</p>
+      <div class="py-6 flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Welcome back, <%= @current_user.name || @current_user.email %>!</h1>
+          <p class="mt-2 text-gray-600">Here's an overview of your shopping activity</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <.link navigate={~p"/messages?from=dashboard"} class="relative inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 font-medium">
+            <.icon name="hero-chat-bubble-left-right" class="w-5 h-5 mr-2" />
+            Messages
+            <%= if @unread_messages && @unread_messages > 0 do %>
+              <span class="ml-2 inline-flex items-center justify-center h-5 min-w-[1.25rem] px-1 rounded-full bg-yellow-400 text-indigo-900 text-xs font-bold">
+                <%= @unread_messages %>
+              </span>
+            <% end %>
+          </.link>
+        </div>
       </div>
     </div>
   </div>
@@ -85,7 +98,7 @@
           <span class="text-sm font-medium text-gray-700">Browse Products</span>
         </.link>
         
-        <.link navigate={~p"/cart"} class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+        <.link navigate={~p"/cart?from=dashboard"} class="flex flex-col items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
           <div class="relative">
             <svg class="w-8 h-8 text-gray-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />

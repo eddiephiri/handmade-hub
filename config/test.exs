@@ -10,7 +10,7 @@ config :pbkdf2_elixir, :rounds, 1
 # Run `mix help test` for more information.
 config :handmade_hub, HandmadeHub.Repo,
   username: "postgres",
-  password: "postgres",
+  password: "5c0rp1027",
   hostname: "localhost",
   database: "handmade_hub_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,

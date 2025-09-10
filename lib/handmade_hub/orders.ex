@@ -5,7 +5,7 @@ defmodule HandmadeHub.Orders do
 
   import Ecto.Query, warn: false
   alias HandmadeHub.Repo
-  alias HandmadeHub.Orders.{Order, OrderItem, ShippingAddress}
+  alias HandmadeHub.Orders.{Order, OrderItem, ShippingAddress, Dispute}
   alias HandmadeHub.Catalog
   alias HandmadeHub.Shopping
 
@@ -14,6 +14,41 @@ defmodule HandmadeHub.Orders do
   """
   def list_orders do
     Repo.all(Order)
+    |> Repo.preload([:user, :order_items, :shipping_address])
+  end
+
+  @doc """
+  Returns the list of orders with optional admin filters.
+
+  Options:
+  - :search (order_number, customer_email, user email/name)
+  - :status (order status)
+  - :payment_status (payment status)
+  """
+  def list_orders_admin(opts \\ %{}) do
+    search = Map.get(opts, :search)
+    status = Map.get(opts, :status)
+    payment_status = Map.get(opts, :payment_status)
+
+    Order
+    |> then(fn q -> if status && status != "", do: where(q, [o], o.status == ^status), else: q end)
+    |> then(fn q -> if payment_status && payment_status != "", do: where(q, [o], o.payment_status == ^payment_status), else: q end)
+    |> then(fn q ->
+      if search && String.trim(search) != "" do
+        like = "%#{search}%"
+        from o in q,
+          left_join: u in assoc(o, :user),
+          where:
+            ilike(o.order_number, ^like) or
+            ilike(o.customer_email, ^like) or
+            ilike(u.email, ^like) or
+            ilike(u.name, ^like)
+      else
+        q
+      end
+    end)
+    |> order_by([o], desc: o.inserted_at)
+    |> Repo.all()
     |> Repo.preload([:user, :order_items, :shipping_address])
   end
 
@@ -52,9 +87,9 @@ defmodule HandmadeHub.Orders do
   """
   def create_order_from_cart_id(cart_id, user, shipping_attrs, payment_attrs) do
     cart_items = Shopping.list_cart_items(cart_id)
-    
+
     result = create_order_from_cart(cart_items, user, shipping_attrs, payment_attrs)
-    
+
     # Convert cart to order if successful
     case result do
       {:ok, order} ->
@@ -71,9 +106,9 @@ defmodule HandmadeHub.Orders do
     Repo.transaction(fn ->
       # Calculate totals
       subtotal = calculate_cart_subtotal(cart_items)
-      shipping_fee = calculate_shipping_fee(shipping_attrs)
+      shipping_fee = calculate_delivery_fee(shipping_attrs)
       total = Order.calculate_total(subtotal, shipping_fee)
-      
+
       # Create order
       order_attrs = %{
         order_number: Order.generate_order_number(),
@@ -90,20 +125,20 @@ defmodule HandmadeHub.Orders do
         status: "pending",
         payment_status: "pending"
       }
-      
+
       case create_order(order_attrs) do
         {:ok, order} ->
           # Create order items
           Enum.each(cart_items, fn item ->
             create_order_item!(order, item)
           end)
-          
+
           # Create shipping address
           create_shipping_address!(order, shipping_attrs)
-          
+
           # Return the complete order
           get_order!(order.id)
-          
+
         {:error, changeset} ->
           Repo.rollback(changeset)
       end
@@ -112,7 +147,7 @@ defmodule HandmadeHub.Orders do
 
   defp create_order_item!(order, cart_item) do
     product = Catalog.get_product!(cart_item.product_id)
-    
+
     attrs = %{
       order_id: order.id,
       product_id: product.id,
@@ -121,7 +156,7 @@ defmodule HandmadeHub.Orders do
       quantity: cart_item.quantity,
       subtotal: OrderItem.calculate_subtotal(product.price, cart_item.quantity)
     }
-    
+
     %OrderItem{}
     |> OrderItem.changeset(attrs)
     |> Repo.insert!()
@@ -129,7 +164,7 @@ defmodule HandmadeHub.Orders do
 
   defp create_shipping_address!(order, attrs) do
     attrs = Map.put(attrs, "order_id", order.id)
-    
+
     %ShippingAddress{}
     |> ShippingAddress.changeset(attrs)
     |> Repo.insert!()
@@ -144,11 +179,11 @@ defmodule HandmadeHub.Orders do
     end)
   end
 
-  defp calculate_shipping_fee(shipping_attrs) do
-    # Basic shipping fee calculation based on location
-    # This can be made more sophisticated based on business rules
+  defp calculate_delivery_fee(shipping_attrs) do
+    # Flat delivery fees for Lusaka-based delivery. Different cities fallback to higher fee.
     case shipping_attrs["city"] do
-      city when city in ["Lusaka", "Kitwe", "Ndola"] -> Decimal.new("50")
+      "Lusaka" -> Decimal.new("30")
+      city when city in ["Makeni", "Woodlands", "Northmead", "Kabulonga", "Chalala", "Kanyama", "Chilenje", "Roma", "Rhodespark", "Bauleni", "Chelston", "Garden", "Matero", "Kabulonga"] -> Decimal.new("30")
       _ -> Decimal.new("75")
     end
   end
@@ -176,7 +211,7 @@ defmodule HandmadeHub.Orders do
   """
   def mark_order_as_paid(order_id, payment_reference) do
     order = get_order!(order_id)
-    
+
     update_order(order, %{
       payment_status: "paid",
       payment_reference: payment_reference,
@@ -193,16 +228,53 @@ defmodule HandmadeHub.Orders do
   end
 
   @doc """
+  Updates order payment status.
+  """
+  def update_order_payment_status(order_id, payment_status) do
+    order = get_order!(order_id)
+    update_order(order, %{payment_status: payment_status})
+  end
+
+  @doc """
   Cancels an order.
   """
   def cancel_order(order_id) do
     order = get_order!(order_id)
-    
+
     if order.status in ["pending", "processing"] do
       update_order(order, %{status: "cancelled"})
     else
       {:error, "Cannot cancel order in current status"}
     end
+  end
+
+  @doc """
+  Refunds an order: sets payment_status to "refunded". Optionally cancels if still pending/processing.
+  """
+  def refund_order(order_id) do
+    order = get_order!(order_id)
+    attrs = %{payment_status: "refunded"}
+    attrs = if order.status in ["pending", "processing"], do: Map.put(attrs, :status, "cancelled"), else: attrs
+    update_order(order, attrs)
+  end
+
+  ## Disputes
+  def open_dispute(order_id, opened_by_user_id, reason, notes \\ nil) do
+    %Dispute{}
+    |> Dispute.changeset(%{order_id: order_id, opened_by_user_id: opened_by_user_id, status: "open", reason: reason, notes: notes})
+    |> Repo.insert()
+  end
+
+  def list_disputes(opts \\ []) do
+    status = Keyword.get(opts, :status)
+    query = Dispute
+    query = if status, do: where(query, [d], d.status == ^status), else: query
+    Repo.all(query) |> Repo.preload([:order, :opened_by_user])
+  end
+
+  def update_dispute_status(dispute_id, status) when status in ["open", "resolved", "closed"] do
+    dispute = Repo.get!(Dispute, dispute_id)
+    dispute |> Dispute.changeset(%{status: status}) |> Repo.update()
   end
 
   @doc """
@@ -224,8 +296,9 @@ defmodule HandmadeHub.Orders do
   """
   def get_order_stats do
     today = Date.utc_today()
-    start_of_month = Date.beginning_of_month(today)
-    
+    start_of_month_date = Date.beginning_of_month(today)
+    start_of_month = start_of_month_date |> NaiveDateTime.new!(~T[00:00:00]) |> DateTime.from_naive!("Etc/UTC")
+
     %{
       total_orders: Repo.aggregate(Order, :count),
       pending_orders: Repo.aggregate(from(o in Order, where: o.status == "pending"), :count),
@@ -237,5 +310,29 @@ defmodule HandmadeHub.Orders do
         select: sum(o.total)
       ) || Decimal.new("0")
     }
+  end
+
+  @doc """
+  Returns monthly order counts and revenue for the last `months_back` months (inclusive of current month).
+  """
+  def orders_monthly_series(months_back \\ 12) when is_integer(months_back) and months_back > 0 do
+    # Determine start date
+    today = Date.utc_today()
+    start_date = today |> Date.beginning_of_month() |> Date.add(-31 * (months_back - 1))
+
+    start_ndt = NaiveDateTime.new!(start_date, ~T[00:00:00])
+    start_dt = DateTime.from_naive!(start_ndt, "Etc/UTC")
+
+    Repo.all(
+      from o in Order,
+        where: o.inserted_at >= ^start_dt,
+        group_by: fragment("date_trunc('month', ?)", o.inserted_at),
+        order_by: fragment("date_trunc('month', ?)", o.inserted_at),
+        select: %{
+          period: fragment("to_char(date_trunc('month', ?), 'YYYY-MM')", o.inserted_at),
+          count: count(o.id),
+          revenue: coalesce(sum(o.total), 0)
+        }
+    )
   end
 end

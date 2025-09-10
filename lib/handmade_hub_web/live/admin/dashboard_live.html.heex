@@ -1,0 +1,145 @@
+<div class="mb-8">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-3xl font-bold text-slate-800 mb-2">Welcome back!</h1>
+      <p class="text-slate-600">Here's what's happening across the platform today.</p>
+    </div>
+    <.button phx-click="refresh" class="bg-indigo-600 hover:bg-indigo-700">Refresh</.button>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+        </svg>
+      </div>
+      <span class="text-2xl font-bold text-slate-800"><%= @totals.users %></span>
+    </div>
+    <h3 class="text-sm font-semibold text-slate-600">Total Users</h3>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <span class="text-2xl font-bold text-slate-800"><%= @totals.artisans %></span>
+    </div>
+    <h3 class="text-sm font-semibold text-slate-600">Artisans</h3>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+        </svg>
+      </div>
+      <span class="text-2xl font-bold text-slate-800"><%= @totals.buyers %></span>
+    </div>
+    <h3 class="text-sm font-semibold text-slate-600">Buyers</h3>
+  </div>
+
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <div class="flex items-center justify-between mb-4">
+      <div class="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+        <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      </div>
+      <span class="text-2xl font-bold text-slate-800"><%= @totals.products %></span>
+    </div>
+    <h3 class="text-sm font-semibold text-slate-600">Products</h3>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <p class="text-sm text-slate-500">Pending Artisan Approvals</p>
+    <p class="mt-1 text-2xl font-semibold"><%= @pending_artisans %></p>
+  </div>
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <p class="text-sm text-slate-500">Pending Product Approvals</p>
+    <p class="mt-1 text-2xl font-semibold"><%= @pending_products %></p>
+  </div>
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <p class="text-sm text-slate-500">Flagged Reviews</p>
+    <p class="mt-1 text-2xl font-semibold"><%= @flagged_reviews %></p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 xl:col-span-2">
+    <h3 class="font-semibold mb-4">Monthly Orders & Revenue</h3>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="bg-gray-50 text-left">
+            <th class="p-2">Month</th>
+            <th class="p-2">Orders</th>
+            <th class="p-2">Revenue</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%= for m <- @monthly do %>
+            <tr class="border-t">
+              <td class="p-2"><%= m.period %></td>
+              <td class="p-2"><%= m.count %></td>
+              <td class="p-2"><%= HandmadeHubWeb.FormatHelpers.format_currency(m.revenue) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <h3 class="font-semibold mb-4">Order Status</h3>
+    <ul class="space-y-2 text-sm">
+      <li class="flex justify-between"><span>Pending</span><span class="font-semibold"><%= @order_stats.pending_orders %></span></li>
+      <li class="flex justify-between"><span>Processing</span><span class="font-semibold"><%= @order_stats.processing_orders %></span></li>
+      <li class="flex justify-between"><span>Delivered</span><span class="font-semibold"><%= @order_stats.completed_orders %></span></li>
+      <li class="flex justify-between"><span>Monthly Revenue</span><span class="font-semibold"><%= HandmadeHubWeb.FormatHelpers.format_currency(@order_stats.monthly_revenue) %></span></li>
+    </ul>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <h3 class="font-semibold mb-3">Recent Orders</h3>
+    <div class="divide-y">
+      <%= for o <- @recent_orders do %>
+        <div class="py-2 flex justify-between text-sm">
+          <div>
+            <p class="font-medium">#<%= o.order_number %></p>
+            <p class="text-gray-500"><%= if o.user, do: (o.user.name || o.user.email), else: (o.customer_name || o.customer_email || "—") %></p>
+          </div>
+          <div class="text-right">
+            <p class="font-medium"><%= HandmadeHubWeb.FormatHelpers.format_currency(o.total) %></p>
+            <p class="text-gray-500"><%= String.capitalize(o.status) %> • <%= String.capitalize(o.payment_status) %></p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+  <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+    <h3 class="font-semibold mb-3">Recent Signups</h3>
+    <div class="divide-y">
+      <%= for u <- @recent_signups do %>
+        <div class="py-2 flex justify-between text-sm">
+          <div>
+            <p class="font-medium"><%= u.name || u.email %></p>
+            <p class="text-gray-500"><%= String.capitalize(u.role || "buyer") %></p>
+          </div>
+          <div class="text-right">
+            <p class="text-gray-500"><%= Calendar.strftime(u.inserted_at, "%Y-%m-%d") %></p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

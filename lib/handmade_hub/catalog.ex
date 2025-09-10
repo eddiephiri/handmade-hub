@@ -41,11 +41,25 @@ defmodule HandmadeHub.Catalog do
   def list_all_products_with_artisans do
     Repo.all(
       from p in Product,
-      join: a in assoc(p, :artisan),
-      preload: [:artisan, :product_images], # Make sure to preload product_images
-      select: p
+        join: a in assoc(p, :artisan),
+        where: is_nil(p.removed_at) and p.approval_status == "approved",
+        preload: [:artisan, :product_images],
+        select: p
     )
   end
+
+  @doc """
+  List products by a list of ids with artisan and images preloaded.
+  """
+  def list_products_by_ids(product_ids) when is_list(product_ids) and length(product_ids) > 0 do
+    Repo.all(
+      from p in Product,
+        where: p.id in ^product_ids,
+        preload: [:artisan, :product_images],
+        order_by: [desc: p.inserted_at]
+    )
+  end
+  def list_products_by_ids(_), do: []
 
   @doc """
   Gets a single product.
@@ -63,7 +77,7 @@ defmodule HandmadeHub.Catalog do
   """
   def get_product!(id) do
     Repo.get!(Product, id)
-    |> Repo.preload([:artisan, :product_images]) # Preload images here too
+    |> Repo.preload([:artisan, :product_images])
   end
 
   @doc """
@@ -145,7 +159,7 @@ defmodule HandmadeHub.Catalog do
 
   # List products for a specific artisan (for artisan dashboard)
   def list_products_by_artisan(artisan_id) do
-    Repo.all(from p in Product, where: p.artisan_id == ^artisan_id, order_by: [desc: p.inserted_at])
+    Repo.all(from p in Product, where: p.artisan_id == ^artisan_id and is_nil(p.removed_at), order_by: [desc: p.inserted_at])
   end
 
   # Product Images
@@ -177,5 +191,50 @@ defmodule HandmadeHub.Catalog do
   def delete_product_image(image_id) do
     image = Repo.get!(ProductImage, image_id)
     Repo.delete(image)
+  end
+
+  # Admin analytics helper
+  def count_products do
+    Repo.aggregate(Product, :count)
+  end
+
+  # Admin product moderation helpers
+  def list_products_for_admin(opts \\ []) do
+    search = Keyword.get(opts, :search)
+    status = Keyword.get(opts, :approval_status)
+    category = Keyword.get(opts, :category)
+
+    Product
+    |> where([p], is_nil(p.removed_at))
+    |> then(fn q -> if status, do: where(q, [p], p.approval_status == ^status), else: q end)
+    |> then(fn q -> if category, do: where(q, [p], p.category == ^category), else: q end)
+    |> then(fn q ->
+      if search && search != "" do
+        where(q, [p], ilike(p.name, ^"%#{search}%") or ilike(p.description, ^"%#{search}%"))
+      else
+        q
+      end
+    end)
+    |> order_by([p], desc: p.inserted_at)
+    |> Repo.all()
+    |> Repo.preload([:artisan, :product_images])
+  end
+
+  def approve_product(%Product{} = product) do
+    product
+    |> Product.changeset(%{approval_status: "approved"})
+    |> Repo.update()
+  end
+
+  def reject_product(%Product{} = product) do
+    product
+    |> Product.changeset(%{approval_status: "rejected"})
+    |> Repo.update()
+  end
+
+  def remove_product(%Product{} = product) do
+    product
+    |> Product.changeset(%{removed_at: DateTime.utc_now()})
+    |> Repo.update()
   end
 end

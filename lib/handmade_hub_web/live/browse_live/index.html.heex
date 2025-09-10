@@ -19,6 +19,24 @@
                 </span>
               <% end %>
             </.link>
+            <.link navigate={~p"/messages?from=browse"} class="glass-effect px-4 py-2 rounded-full text-white hover:bg-white/30 transition-all duration-300 flex items-center gap-2 relative">
+              <.icon name="hero-chat-bubble-left-right" class="w-5 h-5" />
+              Messages
+              <%= if assigns[:unread_messages] && @unread_messages > 0 do %>
+                <span class="absolute -top-1 -right-1 bg-yellow-400 text-indigo-900 text-xs font-bold rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">
+                  <%= @unread_messages %>
+                </span>
+              <% end %>
+            </.link>
+            <.link navigate={~p"/favorites"} class="glass-effect px-4 py-2 rounded-full text-white hover:bg-white/30 transition-all duration-300 flex items-center gap-2 relative">
+              <.icon name="hero-heart" class="w-5 h-5" />
+              Favorites
+              <%= if MapSet.size(@favorite_product_ids) > 0 do %>
+                <span class="absolute -top-1 -right-1 bg-pink-400 text-indigo-900 text-xs font-bold rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">
+                  <%= MapSet.size(@favorite_product_ids) %>
+                </span>
+              <% end %>
+            </.link>
             <.link navigate={~p"/artisan/dashboard"} class="glass-effect px-4 py-2 rounded-full text-white hover:bg-white/30 transition-all duration-300 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3.75A2.25 2.25 0 004.5 6v2.25A2.25 2.25 0 006.75 10.5h2.25A2.25 2.25 0 0011.25 8.25V6A2.25 2.25 0 009 3.75H6.75zM15.75 3.75A2.25 2.25 0 0118 6v2.25A2.25 2.25 0 0115.75 10.5h-2.25A2.25 2.25 0 0111.25 8.25V6A2.25 2.25 0 0113.5 3.75h2.25zM6.75 13.5A2.25 2.25 0 004.5 15.75V18a2.25 2.25 0 002.25 2.25h2.25A2.25 2.25 0 0011.25 18v-2.25A2.25 2.25 0 009 13.5H6.75zM15.75 13.5A2.25 2.25 0 0118 15.75V18a2.25 2.25 0 01-2.25 2.25h-2.25A2.25 2.25 0 0111.25 18v-2.25A2.25 2.25 0 0113.5 13.5h2.25z" />
@@ -171,6 +189,20 @@
         
         <!-- View Mode and Sort -->
         <div class="flex items-center gap-4">
+          <!-- Favorites Toggle -->
+          <button
+            phx-click="toggle_favorites_only"
+            class={[
+              "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              @show_favorites_only && "bg-pink-100 text-pink-700" || "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            ]}
+            title="Show My Favorites"
+          >
+            <svg class="w-4 h-4" fill={@show_favorites_only && "currentColor" || "none"} stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+            My Favorites
+          </button>
           <!-- Sort Dropdown -->
           <form phx-change="sort_products" class="flex items-center gap-2">
             <label class="text-sm text-gray-600">Sort by:</label>
@@ -214,26 +246,33 @@
             <!-- Product Image Container -->
             <div class="relative aspect-square overflow-hidden rounded-t-lg bg-gray-50">
               <!-- Quick Actions (visible on hover) -->
-              <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
-                <div class="absolute top-3 right-3 flex flex-col gap-2">
-                  <button class="bg-white/95 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-white transition-all duration-200 hover:scale-110">
-                    <svg class="w-5 h-5 text-gray-700 hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-                  <button 
-                    phx-click="quick_view"
+              <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 pointer-events-none">
+                <div class="absolute top-3 right-3 flex flex-col gap-2 pointer-events-auto">
+                  <button
+                    phx-click="toggle_favorite"
                     phx-value-product_id={product.id}
                     class="bg-white/95 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-white transition-all duration-200 hover:scale-110"
+                    title="Toggle favorite"
                   >
+                    <%= if MapSet.member?(@favorite_product_ids, product.id) do %>
+                      <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.238 2.25 12.533 2.25 9.375 2.25 6.94 4.243 5 6.563 5c1.36 0 2.636.613 3.487 1.746L12 8.25l1.95-1.504C14.8 5.613 16.076 5 17.437 5 19.757 5 21.75 6.94 21.75 9.375c0 3.158-2.438 5.863-4.739 8.032a25.18 25.18 0 01-4.244 3.17 15.247 15.247 0 01-.383.218l-.022.012-.007.003a.75.75 0 01-.666 0z" />
+                      </svg>
+                    <% else %>
+                      <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                    <% end %>
+                  </button>
+                  <.link navigate={~p"/browse/#{product.id}"} class="bg-white/95 backdrop-blur-sm p-2 rounded-full shadow-md hover:bg-white transition-all duration-200 hover:scale-110">
                     <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                  </button>
+                  </.link>
                 </div>
                 <!-- Add to Cart button (visible on hover) -->
-                <div class="absolute bottom-3 left-3 right-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                <div class="absolute bottom-3 left-3 right-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-auto">
                   <button 
                     phx-click="add_to_cart" 
                     phx-value-product_id={product.id}
@@ -251,6 +290,11 @@
                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                         </svg>
                         Add to Cart
+                        <%= if Map.get(@product_qty_in_cart, product.id, 0) > 0 do %>
+                          <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-600 text-white">
+                            <%= Map.get(@product_qty_in_cart, product.id) %>
+                          </span>
+                        <% end %>
                       </span>
                     <% else %>
                       Out of Stock
@@ -260,12 +304,14 @@
               </div>
               
               <!-- Product Image -->
-              <img 
-                src={get_product_image(product)}
-                alt={product.name}
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                onerror="this.src='https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop'"
-              />
+              <.link navigate={~p"/browse/#{product.id}"}>
+                <img 
+                  src={get_product_image(product)}
+                  alt={product.name}
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onerror="this.src='https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop'"
+                />
+              </.link>
               
               <!-- Badges -->
               <%= if product.quantity <= 5 && product.quantity > 0 do %>
@@ -296,9 +342,9 @@
                         <%= String.first(product.artisan.name) |> String.upcase() %>
                       </span>
                     </div>
-                    <span class="text-xs text-gray-500 truncate max-w-[120px]">
+                    <.link navigate={~p"/artisans/#{product.artisan.id}"} class="text-xs text-indigo-600 hover:text-indigo-700 truncate max-w-[140px]">
                       <%= product.artisan.name %>
-                    </span>
+                    </.link>
                   </div>
                 <% end %>
                 <!-- Rating -->
@@ -306,14 +352,17 @@
                   <svg class="w-3.5 h-3.5 text-yellow-400 fill-current" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                  <span class="text-xs text-gray-600">4.8</span>
+                  <span class="text-xs text-gray-600"><%= :erlang.float_to_binary(Map.get(@product_avg_ratings, product.id, 0.0), decimals: 1) %></span>
+                  <span class="text-[10px] text-gray-400">(<%= Map.get(@product_review_counts, product.id, 0) %>)</span>
                 </div>
               </div>
               
               <!-- Product Name -->
-              <h3 class="text-sm font-medium text-gray-900 mb-1 line-clamp-2 min-h-[2.5rem] group-hover:text-indigo-600 transition-colors">
-                <%= product.name %>
-              </h3>
+              <.link navigate={~p"/browse/#{product.id}"}>
+                <h3 class="text-sm font-medium text-gray-900 mb-1 line-clamp-2 min-h-[2.5rem] group-hover:text-indigo-600 transition-colors">
+                  <%= product.name %>
+                </h3>
+              </.link>
               
               <!-- Product Description -->
               <p class="text-xs text-gray-500 line-clamp-2 mb-3 min-h-[2rem]">

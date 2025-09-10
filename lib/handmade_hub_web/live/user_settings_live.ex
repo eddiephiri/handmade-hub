@@ -5,8 +5,15 @@ defmodule HandmadeHubWeb.UserSettingsLive do
 
   def render(assigns) do
     ~H"""
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="min-h-full">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <.link
+          navigate={~p"/artisan/dashboard"}
+          class="inline-flex items-center text-indigo-600 hover:text-indigo-700"
+        >
+          <.icon name="hero-arrow-left" class="w-4 h-4 mr-2" />
+          Back
+        </.link>
         <!-- Header Section -->
         <div class="mb-8">
           <div class="flex items-center space-x-3 mb-2">
@@ -28,9 +35,9 @@ defmodule HandmadeHubWeb.UserSettingsLive do
           <div class="flex items-center space-x-4">
             <div class="relative">
               <%= if @current_user.profile_image do %>
-                <img 
-                  src={@current_user.profile_image} 
-                  alt="Profile" 
+                <img
+                  src={@current_user.profile_image}
+                  alt="Profile"
                   class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
                 />
               <% else %>
@@ -70,7 +77,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
               </div>
               <p class="text-sm text-gray-600 mt-1 ml-8">Update your email address for account notifications</p>
             </div>
-            
+
             <div class="p-6">
               <.form
                 for={@email_form}
@@ -89,16 +96,16 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <.input 
-                      field={@email_form[:email]} 
-                      type="email" 
+                    <.input
+                      field={@email_form[:email]}
+                      type="email"
                       required
                       placeholder="Enter your new email"
-                      class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
+                      class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label for="current_password_for_email" class="block text-sm font-medium text-gray-700 mb-2">
                     Current Password
@@ -114,14 +121,13 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                       name="current_password"
                       id="current_password_for_email"
                       type="password"
-                      value={@email_form_current_password}
                       required
                       placeholder="Enter your current password"
                       class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
                 </div>
-                
+
                 <div class="flex justify-end pt-4">
                   <button
                     type="submit"
@@ -149,7 +155,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
               </div>
               <p class="text-sm text-gray-600 mt-1 ml-8">Ensure your account stays secure with a strong password</p>
             </div>
-            
+
             <div class="p-6">
               <.form
                 for={@password_form}
@@ -167,7 +173,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                   id="hidden_user_email"
                   value={@current_email}
                 />
-                
+
                 <div>
                   <label for={@password_form[:password].id} class="block text-sm font-medium text-gray-700 mb-2">
                     New Password
@@ -178,17 +184,17 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
-                    <.input 
-                      field={@password_form[:password]} 
-                      type="password" 
+                    <.input
+                      field={@password_form[:password]}
+                      type="password"
                       required
                       placeholder="Enter new password"
-                      class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" 
+                      class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
                   <p class="mt-2 text-sm text-gray-500">Must be at least 12 characters long</p>
                 </div>
-                
+
                 <div>
                   <label for={@password_form[:password_confirmation].id} class="block text-sm font-medium text-gray-700 mb-2">
                     Confirm New Password
@@ -207,7 +213,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                     />
                   </div>
                 </div>
-                
+
                 <div>
                   <label for="current_password_for_password" class="block text-sm font-medium text-gray-700 mb-2">
                     Current Password
@@ -223,14 +229,13 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                       name="current_password"
                       type="password"
                       id="current_password_for_password"
-                      value={@current_password}
                       required
                       placeholder="Enter your current password"
                       class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
                 </div>
-                
+
                 <div class="flex justify-end pt-4">
                   <button
                     type="submit"
@@ -258,7 +263,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
               </div>
               <p class="text-sm text-gray-600 mt-1 ml-8">Manage your account security preferences</p>
             </div>
-            
+
             <div class="p-6 space-y-4">
               <div class="flex items-center justify-between py-3 border-b border-gray-100">
                 <div>
@@ -269,35 +274,74 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                   Enable
                 </button>
               </div>
-              
+
               <div class="flex items-center justify-between py-3 border-b border-gray-100">
                 <div>
                   <h4 class="text-sm font-medium text-gray-900">Login History</h4>
                   <p class="text-sm text-gray-500 mt-1">View recent login activity</p>
                 </div>
-                <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                <button phx-click="open_login_history" class="px-4 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors">
                   View
                 </button>
               </div>
-              
+
               <div class="flex items-center justify-between py-3">
                 <div>
                   <h4 class="text-sm font-medium text-gray-900">Delete Account</h4>
                   <p class="text-sm text-gray-500 mt-1">Permanently delete your account and all data</p>
                 </div>
-                <button class="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                <button phx-click="open_delete_account" class="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
                   Delete
                 </button>
               </div>
             </div>
           </div>
         </div>
+
+        <.modal :if={@show_login_history} id="login-history-modal" show on_cancel={JS.push("close_login_history")}>
+          <div class="p-6 max-w-2xl mx-auto">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">Recent Login Sessions</h3>
+              <button phx-click="close_login_history" class="text-gray-400 hover:text-gray-600">
+                ✕
+              </button>
+            </div>
+            <div class="divide-y">
+              <div :for={sess <- @login_sessions} class="py-3 flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                  <p>Session ID: <span class="font-mono text-gray-900"><%= Base.encode16(sess.token, case: :lower) |> String.slice(0, 12) %>…</span></p>
+                  <p class="text-gray-500">Started: <%= Calendar.strftime(sess.inserted_at, "%b %d, %Y %I:%M %p") %></p>
+                </div>
+                <span class="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700"><%= sess.context %></span>
+              </div>
+              <%= if @login_sessions == [] do %>
+                <div class="py-6 text-center text-gray-500 text-sm">No recent sessions found.</div>
+              <% end %>
+            </div>
+          </div>
+        </.modal>
+        <.modal :if={@show_delete_account} id="delete-account-modal" show on_cancel={JS.push("close_delete_account")}>
+          <div class="p-6 max-w-md mx-auto">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Account Deletion</h3>
+            <p class="text-sm text-gray-600 mb-4">This action is permanent and will remove your account and all associated data. Please confirm your password to continue.</p>
+            <.form for={%{}} as={:confirm} phx-submit="confirm_delete_account" class="space-y-4">
+              <div>
+                <label for="confirm_current_password" class="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                <input id="confirm_current_password" name="current_password" type="password" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
+              <div class="flex items-center justify-end gap-2">
+                <button type="button" phx-click="close_delete_account" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">Cancel</button>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700">Delete Account</button>
+              </div>
+            </.form>
+          </div>
+        </.modal>
       </div>
     </div>
     """
   end
 
-  def mount(%{"token" => token}, _session, socket) do
+  def mount(%{"token" => token} = _params, _session, socket) do
     socket =
       case Accounts.update_user_email(socket.assigns.current_user, token) do
         :ok ->
@@ -310,33 +354,35 @@ defmodule HandmadeHubWeb.UserSettingsLive do
     {:ok, push_navigate(socket, to: ~p"/users/settings")}
   end
 
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     user = socket.assigns.current_user
+    show_artisan_sidebar = user.role == "artisan" and user.artisan_status == "approved"
     email_changeset = Accounts.change_user_email(user)
     password_changeset = Accounts.change_user_password(user)
 
     socket =
       socket
-      |> assign(:current_password, nil)
-      |> assign(:email_form_current_password, nil)
       |> assign(:current_email, user.email)
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
       |> assign(:trigger_submit, false)
+      |> assign(:show_login_history, false)
+      |> assign(:login_sessions, [])
+      |> assign(:show_delete_account, false)
+      |> assign(:show_artisan_sidebar, true)
+      |> assign(:hide_back_to_browse, true)
 
     {:ok, socket}
   end
 
-  def handle_event("validate_email", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-
+  def handle_event("validate_email", %{"user" => user_params}, socket) do
     email_form =
       socket.assigns.current_user
       |> Accounts.change_user_email(user_params)
       |> Map.put(:action, :validate)
       |> to_form()
 
-    {:noreply, assign(socket, email_form: email_form, email_form_current_password: password)}
+    {:noreply, assign(socket, email_form: email_form)}
   end
 
   def handle_event("update_email", params, socket) do
@@ -359,16 +405,14 @@ defmodule HandmadeHubWeb.UserSettingsLive do
     end
   end
 
-  def handle_event("validate_password", params, socket) do
-    %{"current_password" => password, "user" => user_params} = params
-
+  def handle_event("validate_password", %{"user" => user_params}, socket) do
     password_form =
       socket.assigns.current_user
       |> Accounts.change_user_password(user_params)
       |> Map.put(:action, :validate)
       |> to_form()
 
-    {:noreply, assign(socket, password_form: password_form, current_password: password)}
+    {:noreply, assign(socket, password_form: password_form)}
   end
 
   def handle_event("update_password", params, socket) do
@@ -386,6 +430,38 @@ defmodule HandmadeHubWeb.UserSettingsLive do
 
       {:error, changeset} ->
         {:noreply, assign(socket, password_form: to_form(changeset))}
+    end
+  end
+
+  def handle_event("open_login_history", _params, socket) do
+    sessions = Accounts.list_user_login_sessions(socket.assigns.current_user, limit: 10)
+    {:noreply, assign(socket, show_login_history: true, login_sessions: sessions)}
+  end
+
+  def handle_event("close_login_history", _params, socket) do
+    {:noreply, assign(socket, show_login_history: false)}
+  end
+
+  def handle_event("open_delete_account", _params, socket) do
+    {:noreply, assign(socket, show_delete_account: true)}
+  end
+
+  def handle_event("close_delete_account", _params, socket) do
+    {:noreply, assign(socket, show_delete_account: false)}
+  end
+
+  def handle_event("confirm_delete_account", %{"current_password" => current_password}, socket) do
+    user = socket.assigns.current_user
+    case Accounts.delete_user(user, current_password) do
+      {:ok, :deleted} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "Your account has been deleted.")
+         |> redirect(to: ~p"/")}
+      {:error, :invalid_password} ->
+        {:noreply, put_flash(socket, :error, "Current password is invalid.")}
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to delete account. Please try again.")}
     end
   end
 end
