@@ -35,3 +35,10 @@ handmade_hub-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Root-level node modules (do not commit installed packages)
+/node_modules/
+
+# User-uploaded files and precompressed assets
+/priv/static/uploads/
+/priv/static/**/*.gz
+

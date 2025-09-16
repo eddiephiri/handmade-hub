@@ -88,6 +88,18 @@ defmodule HandmadeHubWeb.Router do
     post "/users/log_in", UserSessionController, :create
   end
 
+  # Email confirmation routes (accessible to both authenticated and unauthenticated users)
+  scope "/", HandmadeHubWeb do
+    pipe_through [:browser]
+
+    live_session :email_confirmation,
+      on_mount: [{HandmadeHubWeb.UserAuth, :mount_current_user}],
+      layout: {HandmadeHubWeb.Layouts, :auth} do
+      live "/users/confirm", UserConfirmationInstructionsLive, :new
+      live "/users/confirm/:token", UserConfirmationLive, :edit
+    end
+  end
+
   scope "/", HandmadeHubWeb do
     pipe_through [:browser, :require_authenticated_user]
 

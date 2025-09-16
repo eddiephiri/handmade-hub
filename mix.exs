@@ -53,6 +53,7 @@ defmodule HandmadeHub.MixProject do
        compile: false,
        depth: 1},
       {:swoosh, "~> 1.5"},
+      {:gen_smtp, "~> 1.0"},
       {:finch, "~> 0.13"},
       {:quantum, "~> 3.5"},
       {:telemetry_metrics, "~> 1.0"},

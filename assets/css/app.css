@@ -6,3 +6,17 @@
 /* This file is for your main application CSS */
 
 [x-cloak] { display: none !important; }
+
+/* Ensure trailing icons inside buttons/links don't overlap text */
+button > svg:last-child,
+a > svg:last-child,
+button > span[class*="hero-"]:last-child,
+a > span[class*="hero-"]:last-child {
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+/* Give native selects extra right padding so the dropdown arrow never overlaps text */
+select {
+  padding-right: 2.25rem;
+}
