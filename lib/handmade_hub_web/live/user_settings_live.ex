@@ -84,8 +84,12 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                 id="email_form"
                 phx-submit="update_email"
                 phx-change="validate_email"
+                autocomplete="off"
                 class="space-y-5"
               >
+                <!-- Autofill decoys to discourage password managers from filling the real fields -->
+                <input type="text" name="fake_username" autocomplete="username" tabindex="-1" style="position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden;" />
+                <input type="password" name="fake_password" autocomplete="new-password" tabindex="-1" style="position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden;" />
                 <div>
                   <label for={@email_form[:email].id} class="block text-sm font-medium text-gray-700 mb-2">
                     New Email Address
@@ -100,6 +104,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                       field={@email_form[:email]}
                       type="email"
                       required
+                      autocomplete="off"
                       placeholder="Enter your new email"
                       class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
@@ -123,6 +128,8 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                       type="password"
                       required
                       placeholder="Enter your current password"
+                      autocomplete="off"
+                      inputmode="text"
                       class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>

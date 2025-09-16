@@ -79,7 +79,32 @@
 </header>
 <!-- ========== END HEADER ========== -->
 
-<div class="flex min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 to-blue-50">
+<!-- ========== BREADCRUMB AREA ========== -->
+<div class="w-full bg-gradient-to-r from-slate-50 to-gray-100 border-b border-gray-200 shadow-sm">
+  <div class="flex">
+    <!-- Sidebar space -->
+    <div class="hidden md:block w-72 shrink-0"></div>
+    <!-- Breadcrumb content area -->
+    <div class="flex-1 px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-12">
+        <!-- Breadcrumb Navigation -->
+        <.breadcrumb items={[
+          %{label: "Dashboard", href: ~p"/admin/dashboard"},
+          %{label: "Home", href: ~p"/admin/dashboard"},
+          %{label: "Dashboard", href: nil}
+        ]} />
+        
+        <!-- Date and Time Display -->
+        <div class="flex items-center">
+          <.datetime_display />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ========== END BREADCRUMB AREA ========== -->
+
+<div class="flex min-h-[calc(100vh-7rem)] bg-gradient-to-br from-gray-100 to-gray-200">
   <aside id="admin-sidebar" class="bg-white/95 backdrop-blur-sm border-r border-slate-200/60 flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg hidden md:block w-72">
     <div class="h-full flex flex-col">
       <div class="p-6 border-b border-slate-100/80">
@@ -104,38 +129,71 @@
       </div>
 
       <nav class="flex-1 p-4">
+        <% current_path = @current_admin_path || "" %>
         <div class="space-y-2">
-          <.link navigate={~p"/admin/dashboard"} class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <.link navigate={~p"/admin/dashboard"} class={[
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+            String.starts_with?(current_path, "/admin/dashboard") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ]}>
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6a2 2 0 01-2 2H10a2 2 0 01-2-2V5z" /></svg>
             <span class="ml-3 font-medium js-collapsible-label">Dashboard</span>
+            <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/dashboard") && "opacity-100"]}></div>
           </.link>
-          <.link navigate={~p"/admin/artisans"} class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <.link navigate={~p"/admin/artisans"} class={[
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+            String.starts_with?(current_path, "/admin/artisans") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ]}>
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
             <span class="ml-3 font-medium js-collapsible-label">Artisans</span>
+            <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/artisans") && "opacity-100"]}></div>
           </.link>
-          <.link navigate={~p"/admin/buyers"} class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <.link navigate={~p"/admin/buyers"} class={[
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+            String.starts_with?(current_path, "/admin/buyers") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ]}>
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"/></svg>
             <span class="ml-3 font-medium js-collapsible-label">Buyers</span>
+            <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/buyers") && "opacity-100"]}></div>
           </.link>
-          <.link navigate={~p"/admin/products"} class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <.link navigate={~p"/admin/products"} class={[
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+            String.starts_with?(current_path, "/admin/products") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ]}>
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
             <span class="ml-3 font-medium js-collapsible-label">Products</span>
+            <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/products") && "opacity-100"]}></div>
           </.link>
-          <.link navigate={~p"/admin/orders"} class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <.link navigate={~p"/admin/orders"} class={[
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+            String.starts_with?(current_path, "/admin/orders") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ]}>
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
             <span class="ml-3 font-medium js-collapsible-label">Orders</span>
+            <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/orders") && "opacity-100"]}></div>
           </.link>
-          <.link navigate={~p"/admin/reviews"} class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <.link navigate={~p"/admin/reviews"} class={[
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+            String.starts_with?(current_path, "/admin/reviews") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ]}>
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
             <span class="ml-3 font-medium js-collapsible-label">Reviews</span>
+            <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/reviews") && "opacity-100"]}></div>
           </.link>
-          <.link navigate={~p"/admin/analytics"} class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <.link navigate={~p"/admin/analytics"} class={[
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+            String.starts_with?(current_path, "/admin/analytics") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ]}>
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.983 13.9a1.9 1.9 0 100-3.8 1.9 1.9 0 000 3.8z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.285 12.972a7.953 7.953 0 000-1.944l2.122-1.55a.5.5 0 00.12-.66l-2-3.464a.5.5 0 00-.607-.218l-2.5 1a7.97 7.97 0 00-1.683-.98l-.375-2.65a.5.5 0 00-.497-.426h-4a.5.5 0 00-.497.426l-.375 2.65c.593-.23 1.157-.57 1.683-.98l2.5 1a.5.5 0 00.607-.218l2-3.464a.5.5 0 00-.12-.66l-2.122-1.55z"/></svg>
             <span class="ml-3 font-medium js-collapsible-label">Analytics</span>
+            <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/analytics") && "opacity-100"]}></div>
           </.link>
-          <.link navigate={~p"/admin/settings"} class="w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+          <.link navigate={~p"/admin/settings"} class={[
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+            String.starts_with?(current_path, "/admin/settings") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ]}>
             <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.983 13.9a1.9 1.9 0 100-3.8 1.9 1.9 0 000 3.8z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.285 12.972a7.953 7.953 0 000-1.944l2.122-1.55a.5.5 0 00.12-.66l-2-3.464a.5.5 0 00-.607-.218l-2.5 1a7.97 7.97 0 00-1.683-.98l-.375-2.65a.5.5 0 00-.497-.426h-4a.5.5 0 00-.497.426l-.375 2.65c.593-.23 1.157-.57 1.683-.98l2.5 1a.5.5 0 00.607-.218l2-3.464a.5.5 0 00-.12-.66l-2.122-1.55z"/></svg>
             <span class="ml-3 font-medium js-collapsible-label">Settings</span>
+            <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/settings") && "opacity-100"]}></div>
           </.link>
         </div>
       </nav>

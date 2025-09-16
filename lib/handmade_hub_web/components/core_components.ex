@@ -710,4 +710,64 @@ defmodule HandmadeHubWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  @doc """
+  Renders a breadcrumb navigation component.
+
+  ## Examples
+
+      <.breadcrumb items={[
+        %{label: "Dashboard", href: ~p"/dashboard"},
+        %{label: "Products", href: ~p"/products"},
+        %{label: "Edit", href: nil}
+      ]} />
+
+  """
+  attr :items, :list, required: true, doc: "List of breadcrumb items with label and optional href"
+  attr :class, :string, default: "flex items-center space-x-2 text-sm"
+
+  def breadcrumb(assigns) do
+    ~H"""
+    <nav class={@class}>
+      <%= for {item, index} <- Enum.with_index(@items) do %>
+        <%= if index > 0 do %>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        <% end %>
+
+        <%= if item.href do %>
+          <.link href={item.href} class="text-gray-600 hover:text-gray-900 transition-colors">
+            <%= item.label %>
+          </.link>
+        <% else %>
+          <span class="text-gray-500"><%= item.label %></span>
+        <% end %>
+      <% end %>
+    </nav>
+    """
+  end
+
+  @doc """
+  Renders a date and time display component.
+
+  ## Examples
+
+      <.datetime_display />
+
+  """
+  attr :class, :string, default: "px-3 py-1 border border-gray-300 rounded-md bg-white"
+  attr :datetime, :string, default: nil
+
+  def datetime_display(assigns) do
+    assigns = assign(assigns, :datetime, assigns[:datetime] || Calendar.strftime(DateTime.utc_now(), "%b %d, %y at %I:%M %p"))
+
+    ~H"""
+    <div class={@class}>
+      <span class="text-sm font-medium text-gray-700" id="current-datetime">
+        <%= @datetime %>
+      </span>
+    </div>
+    """
+  end
 end
