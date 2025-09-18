@@ -29,11 +29,28 @@ config :handmade_hub, HandmadeHubWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :handmade_hub, dev_routes: true
 
-# Configure the mailer to use local storage for development
-# This stores emails locally and you can view them in the browser at /dev/mailbox
-# For production, you'll want to use a real SMTP provider like SendGrid or Gmail
+# Configure the mailer to use Gmail SMTP for real email delivery
+# This sends actual emails that you can read in your Gmail inbox
+# Perfect for demonstrations and project defense presentations
 config :handmade_hub, HandmadeHub.Mailer,
-  adapter: Swoosh.Adapters.Local
+  adapter: Swoosh.Adapters.SMTP,
+  relay: "smtp.gmail.com",
+  port: 587,
+  username: System.get_env("GMAIL_USERNAME", "eddiephiri44@gmail.com"),
+  password: System.get_env("GMAIL_APP_PASSWORD", "jncnbfnwtjuobsis"),
+  tls: :always,
+  ssl: false,
+  auth: :always,
+  retries: 2,
+  no_mx_lookups: false,
+  helo: "localhost",
+  tls_options: [
+    verify: :verify_none,
+    server_name_indication: :disable,
+    customize_hostname_check: [
+      match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+    ]
+  ]
 
 # Configure Swoosh API Client
 config :swoosh, :api_client, Swoosh.ApiClient.Finch
