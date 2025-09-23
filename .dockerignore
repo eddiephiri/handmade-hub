@@ -1,0 +1,29 @@
+# Elixir build artifacts
+/_build
+/deps
+/cover
+
+# Node/npm
+/node_modules
+npm-debug.log*
+yarn-error.log*
+
+# Editor/OS
+.DS_Store
+*.swp
+*.swo
+.idea
+.vscode
+
+# Git
+.git
+.gitignore
+
+# Mix
+erl_crash.dump
+*.ez
+
+# Assets build caches
+/priv/static/assets/*.map
+
+
