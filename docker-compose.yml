@@ -7,8 +7,6 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
       POSTGRES_DB: handmade_hub_prod
-    ports:
-      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
 
@@ -21,11 +19,11 @@ services:
       MIX_ENV: prod
       PHX_SERVER: "true"
       PHX_HOST: localhost
-      PORT: "4000"
+      PORT: "9706"
       SECRET_KEY_BASE: "eWtz0ZpU2puOnVQ2sZPE1MCrJWEmCmbFUkTT6QbMFkV3/VExkB+bKZ+PqbGNJYCTC+m46uT04LHuvjdhLIyNlQ=="
       DATABASE_URL: ecto://postgres:postgres@db:5432/handmade_hub_prod
     ports:
-      - "4000:4000"
+      - "9706:9706"
 
 volumes:
   db_data:

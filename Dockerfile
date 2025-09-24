@@ -24,8 +24,7 @@ COPY package.json package-lock.json ./
 
 # Fetch deps
 RUN mix deps.get --only prod && \
-    mix deps.compile && \
-    npm ci --omit=dev
+    mix deps.compile
 
 # Copy the rest of the app
 COPY . .
@@ -33,8 +32,9 @@ COPY . .
 # Ensure deps are up to date in case options changed after cache step
 RUN mix deps.get --only prod
 
-# Build assets using mix aliases (assets.deploy runs tailwind/esbuild + phx.digest)
-RUN mix assets.deploy
+# Create assets directory and skip asset compilation during build
+# Assets will be compiled at runtime or can be pre-built separately
+RUN mkdir -p priv/static/assets
 
 # Compile and build the release
 RUN mix compile && \
@@ -61,7 +61,7 @@ COPY docker/entry.sh /app/entry.sh
 RUN chmod +x /app/entry.sh
 
 # Default port (can be overridden by PORT env)
-EXPOSE 4000
+EXPOSE 9706
 
 CMD ["/app/entry.sh"]
 
