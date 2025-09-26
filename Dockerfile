@@ -26,19 +26,24 @@ COPY package.json package-lock.json ./
 RUN mix deps.get --only prod && \
     mix deps.compile
 
+# Install Node.js dependencies (including Preline)
+RUN npm ci --only=production
+
 # Copy the rest of the app
 COPY . .
 
 # Ensure deps are up to date in case options changed after cache step
 RUN mix deps.get --only prod
 
-# Create assets directory and skip asset compilation during build
-# Assets will be compiled at runtime or can be pre-built separately
-RUN mkdir -p priv/static/assets
+# Build assets
+RUN mix assets.deploy
 
 # Compile and build the release
 RUN mix compile && \
     mix release
+
+# Copy static assets into the release directory structure
+RUN cp -r priv/static _build/prod/rel/handmade_hub/
 
 # ---- Runtime image ----
 FROM debian:bookworm-slim AS app
@@ -53,7 +58,7 @@ ENV LANG=C.UTF-8 \
 
 WORKDIR /app
 
-# Copy release from build stage
+# Copy release from build stage (now includes static assets)
 COPY --from=build /app/_build/prod/rel/handmade_hub ./
 
 # Copy entrypoint script
@@ -64,5 +69,3 @@ RUN chmod +x /app/entry.sh
 EXPOSE 9706
 
 CMD ["/app/entry.sh"]
-
-

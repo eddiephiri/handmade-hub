@@ -18,7 +18,7 @@ services:
     environment:
       MIX_ENV: prod
       PHX_SERVER: "true"
-      PHX_HOST: localhost
+      PHX_HOST: 145.14.158.40
       PORT: "9706"
       SECRET_KEY_BASE: "eWtz0ZpU2puOnVQ2sZPE1MCrJWEmCmbFUkTT6QbMFkV3/VExkB+bKZ+PqbGNJYCTC+m46uT04LHuvjdhLIyNlQ=="
       DATABASE_URL: ecto://postgres:postgres@db:5432/handmade_hub_prod
