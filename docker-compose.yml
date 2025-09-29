@@ -22,6 +22,9 @@ services:
       PORT: "9706"
       SECRET_KEY_BASE: "eWtz0ZpU2puOnVQ2sZPE1MCrJWEmCmbFUkTT6QbMFkV3/VExkB+bKZ+PqbGNJYCTC+m46uT04LHuvjdhLIyNlQ=="
       DATABASE_URL: ecto://postgres:postgres@db:5432/handmade_hub_prod
+      environment:
+      GMAIL_USERNAME: eddiephiri44@gmail.com
+      GMAIL_APP_PASSWORD: gtqrsvotxqmbwpji
     ports:
       - "9706:9706"
 

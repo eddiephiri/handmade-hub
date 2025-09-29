@@ -99,19 +99,47 @@ if config_env() == :prod do
 
   # ## Configuring the mailer
   #
-  # In production you need to configure the mailer to use a different adapter.
-  # Also, you may need to configure the Swoosh API client of your choice if you
-  # are not using SMTP. Here is an example of the configuration:
-  #
-  #     config :handmade_hub, HandmadeHub.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # For this example you need include a HTTP client required by Swoosh API client.
-  # Swoosh supports Hackney and Finch out of the box:
-  #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Hackney
-  #
-  # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+  # Configure email delivery for production using environment variables
+  # You can use either Gmail SMTP or SendGrid SMTP
+
+  # Option 1: Gmail SMTP (if you have Gmail credentials)
+  if System.get_env("GMAIL_USERNAME") && System.get_env("GMAIL_APP_PASSWORD") do
+    config :handmade_hub, HandmadeHub.Mailer,
+      adapter: Swoosh.Adapters.SMTP,
+      relay: "smtp.gmail.com",
+      port: 587,
+      username: System.get_env("GMAIL_USERNAME"),
+      password: System.get_env("GMAIL_APP_PASSWORD"),
+      tls: :always,
+      ssl: false,
+      auth: :always,
+      retries: 2,
+      no_mx_lookups: false,
+      helo: "localhost",
+      tls_options: [
+        verify: :verify_none,
+        server_name_indication: :disable,
+        customize_hostname_check: [
+          match_fun: :public_key.pkix_verify_hostname_match_fun(:https)
+        ]
+      ]
+  end
+
+  # Option 2: SendGrid SMTP (if you have SendGrid credentials)
+  if System.get_env("SENDGRID_API_KEY") do
+    config :handmade_hub, HandmadeHub.Mailer,
+      adapter: Swoosh.Adapters.SMTP,
+      relay: "smtp.sendgrid.net",
+      port: 587,
+      username: "apikey",
+      password: System.get_env("SENDGRID_API_KEY"),
+      tls: :always,
+      ssl: false,
+      auth: :always,
+      retries: 2,
+      no_mx_lookups: false
+  end
+
+  # Configure Swoosh API Client
+  config :swoosh, :api_client, Swoosh.ApiClient.Finch
 end

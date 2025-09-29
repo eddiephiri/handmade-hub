@@ -29,12 +29,12 @@ config :handmade_hub, HandmadeHubWeb.Endpoint,
 
 # Configures the mailer
 #
-# By default it uses the "Local" adapter which stores the emails
-# locally. You can see the emails in your browser, at "/dev/mailbox".
+# Email adapter is configured per environment:
+# - Development: Uses Local adapter (see config/dev.exs)
+# - Production: Uses SMTP adapter (see config/runtime.exs)
 #
-# For production it's recommended to configure a different adapter
-# at the `config/runtime.exs`.
-config :handmade_hub, HandmadeHub.Mailer, adapter: Swoosh.Adapters.Local
+# The Local adapter stores emails locally and can be viewed at "/dev/mailbox".
+# For production, SMTP adapters are configured in runtime.exs using environment variables.
 
 # Configure esbuild (the version is required)
 config :esbuild,
