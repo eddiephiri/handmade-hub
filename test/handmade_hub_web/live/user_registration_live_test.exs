@@ -17,7 +17,7 @@ defmodule HandmadeHubWeb.UserRegistrationLiveTest do
         conn
         |> log_in_user(user_fixture())
         |> live(~p"/users/register")
-        |> follow_redirect(conn, "/")
+        |> follow_redirect(conn, "/browse")
 
       assert {:ok, _conn} = result
     end
@@ -37,22 +37,15 @@ defmodule HandmadeHubWeb.UserRegistrationLiveTest do
   end
 
   describe "register user" do
-    test "creates account and logs the user in", %{conn: conn} do
+    test "creates account and redirects to login", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/users/register")
 
       email = unique_user_email()
       form = form(lv, "#registration_form", user: valid_user_attributes(email: email))
-      render_submit(form)
-      conn = follow_trigger_action(form, conn)
+      {:ok, _login_lv, login_html} = render_submit(form) |> follow_redirect(conn, ~p"/users/log_in")
 
-      assert redirected_to(conn) == ~p"/"
-
-      # Now do a logged in request and assert on the menu
-      conn = get(conn, "/")
-      response = html_response(conn, 200)
-      assert response =~ email
-      assert response =~ "Settings"
-      assert response =~ "Log out"
+      assert login_html =~ "Log in"
+      assert login_html =~ "Account created successfully"
     end
 
     test "renders errors for duplicated email", %{conn: conn} do
@@ -77,7 +70,7 @@ defmodule HandmadeHubWeb.UserRegistrationLiveTest do
 
       {:ok, _login_live, login_html} =
         lv
-        |> element(~s|main a:fl-contains("Log in")|)
+        |> element(~s|a:fl-contains("Log in")|)
         |> render_click()
         |> follow_redirect(conn, ~p"/users/log_in")
 
