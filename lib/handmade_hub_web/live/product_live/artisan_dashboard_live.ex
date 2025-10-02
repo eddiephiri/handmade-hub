@@ -17,10 +17,16 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
          |> put_flash(:error, "You must be logged in to access this page")
          |> redirect(to: ~p"/users/log_in")}
 
-      user.role != "artisan" or user.artisan_status != "approved" ->
+      user.role != "artisan" ->
         {:ok,
          socket
          |> redirect(to: ~p"/buyer/dashboard")}
+
+      user.artisan_status != "approved" ->
+        {:ok,
+         socket
+         |> put_flash(:info, "Your artisan account is pending approval. Complete your profile while you wait.")
+         |> redirect(to: ~p"/users/settings/profile")}
 
       true ->
         form = HandmadeHub.Accounts.User.profile_changeset(user, %{}) |> to_form()

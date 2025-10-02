@@ -251,8 +251,10 @@ defmodule HandmadeHubWeb.UserAuth do
   defp signed_in_path(conn) do
     user = conn.assigns[:current_user]
     cond do
-      user && user.role == "artisan" ->
+      user && user.role == "artisan" && user.artisan_status == "approved" ->
         "/artisan/dashboard"
+      user && user.role == "artisan" ->
+        "/users/settings/profile"
       true ->
         "/browse"
     end
