@@ -40,6 +40,12 @@ defmodule HandmadeHubWeb.UserProfileLive do
     end
   end
 
+	def handle_event("back_to_dashboard", _params, socket) do
+		{:noreply,
+		 socket
+		 |> put_flash(:info, "Your artisan account requires approval before accessing the dashboard. Please complete your profile and wait for approval.")}
+	end
+
   defp handle_upload(socket, params) do
     uploads_dir = "priv/static/uploads/profile_images"
     File.mkdir_p!(uploads_dir)

@@ -2,13 +2,34 @@
   <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Back Button -->
     <div class="mb-8">
-      <.link 
-        navigate={~p"/buyer/dashboard"}
-        class="inline-flex items-center text-slate-600 hover:text-slate-900 transition-colors duration-200 group"
-      >
-        <.icon name="hero-arrow-left" class="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
-        Back to Dashboard
-      </.link>
+		<%= if @current_user.role == "artisan" do %>
+			<%= if @current_user.artisan_status == "approved" do %>
+				<.link 
+					navigate={~p"/artisan/dashboard"}
+					class="inline-flex items-center text-slate-600 hover:text-slate-900 transition-colors duration-200 group"
+				>
+					<.icon name="hero-arrow-left" class="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
+					Back to Dashboard
+				</.link>
+			<% else %>
+				<.link 
+					href="#"
+					phx-click="back_to_dashboard"
+					class="inline-flex items-center text-slate-600 hover:text-slate-900 transition-colors duration-200 group"
+				>
+					<.icon name="hero-arrow-left" class="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
+					Back to Dashboard
+				</.link>
+			<% end %>
+		<% else %>
+			<.link 
+				navigate={~p"/buyer/dashboard"}
+				class="inline-flex items-center text-slate-600 hover:text-slate-900 transition-colors duration-200 group"
+			>
+				<.icon name="hero-arrow-left" class="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
+				Back to Dashboard
+			</.link>
+		<% end %>
     </div>
 
     <!-- Header Section -->
