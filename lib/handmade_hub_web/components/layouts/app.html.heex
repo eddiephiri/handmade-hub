@@ -363,77 +363,7 @@
 </header>
 <!-- ========== END HEADER ========== -->
 
-<!-- ========== BREADCRUMB AREA ========== -->
-<%= if cu || ad do %>
-  <%= if cu && cu.role == "artisan" && cu.artisan_status == "approved" && assigns[:show_artisan_sidebar] do %>
-    <div class="w-full bg-gradient-to-r from-slate-50 to-gray-100 border-b border-gray-200 shadow-sm">
-      <div class="flex">
-        <!-- Sidebar space -->
-        <div class="hidden md:block w-64 shrink-0"></div>
-        <!-- Breadcrumb content area -->
-        <div class="flex-1 px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center h-12">
-            <!-- Breadcrumb Navigation -->
-            <.breadcrumb items={[
-              %{label: "Dashboard", href: ~p"/"},
-              %{label: "Home", href: ~p"/"},
-              %{label: "Dashboard", href: nil}
-            ]} />
-            
-            <!-- Date and Time Display -->
-            <div class="flex items-center">
-              <.datetime_display />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  <% else %>
-    <%= if ad && assigns[:show_admin_sidebar] != false do %>
-      <div class="w-full bg-gradient-to-r from-slate-50 to-gray-100 border-b border-gray-200 shadow-sm">
-        <div class="flex">
-          <!-- Sidebar space -->
-          <div class="hidden md:block w-64 shrink-0"></div>
-          <!-- Breadcrumb content area -->
-          <div class="flex-1 px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-12">
-              <!-- Breadcrumb Navigation -->
-              <.breadcrumb items={[
-                %{label: "Dashboard", href: ~p"/admin/dashboard"},
-                %{label: "Home", href: ~p"/admin/dashboard"},
-                %{label: "Dashboard", href: nil}
-              ]} />
-              
-              <!-- Date and Time Display -->
-              <div class="flex items-center">
-                <.datetime_display />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    <% else %>
-      <div class="w-full bg-gradient-to-r from-slate-50 to-gray-100 border-b border-gray-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center h-12">
-            <!-- Breadcrumb Navigation -->
-            <.breadcrumb items={[
-              %{label: "Dashboard", href: ~p"/"},
-              %{label: "Home", href: ~p"/"},
-              %{label: "Dashboard", href: nil}
-            ]} />
-            
-            <!-- Date and Time Display -->
-            <div class="flex items-center">
-              <.datetime_display />
-            </div>
-          </div>
-        </div>
-      </div>
-    <% end %>
-  <% end %>
-<% end %>
-<!-- ========== END BREADCRUMB AREA ========== -->
+ 
 
 <!-- ========== MAIN CONTENT ========== -->
 <main class="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">

@@ -79,30 +79,7 @@
 </header>
 <!-- ========== END HEADER ========== -->
 
-<!-- ========== BREADCRUMB AREA ========== -->
-<div class="w-full bg-gradient-to-r from-slate-50 to-gray-100 border-b border-gray-200 shadow-sm">
-  <div class="flex">
-    <!-- Sidebar space -->
-    <div class="hidden md:block w-72 shrink-0"></div>
-    <!-- Breadcrumb content area -->
-    <div class="flex-1 px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-12">
-        <!-- Breadcrumb Navigation -->
-        <.breadcrumb items={[
-          %{label: "Dashboard", href: ~p"/admin/dashboard"},
-          %{label: "Home", href: ~p"/admin/dashboard"},
-          %{label: "Dashboard", href: nil}
-        ]} />
-        
-        <!-- Date and Time Display -->
-        <div class="flex items-center">
-          <.datetime_display />
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<!-- ========== END BREADCRUMB AREA ========== -->
+ 
 
 <div class="flex min-h-[calc(100vh-7rem)] bg-gradient-to-br from-gray-100 to-gray-200">
   <aside id="admin-sidebar" class="bg-white/95 backdrop-blur-sm border-r border-slate-200/60 flex-shrink-0 transition-all duration-300 ease-in-out shadow-lg hidden md:block w-72">
