@@ -1,12 +1,10 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_DB: handmade_hub_prod
+      POSTGRES_PASSWORD: ${POSTGRES_USER}
+      POSTGRES_USER: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - db_data:/var/lib/postgresql/data
 
@@ -16,17 +14,17 @@ services:
     depends_on:
       - db
     environment:
-      MIX_ENV: prod
+      MIX_ENV: ${MIX_ENV}
       PHX_SERVER: "true"
-      PHX_HOST: 145.14.158.40
-      PORT: "9706"
-      SECRET_KEY_BASE: "eWtz0ZpU2puOnVQ2sZPE1MCrJWEmCmbFUkTT6QbMFkV3/VExkB+bKZ+PqbGNJYCTC+m46uT04LHuvjdhLIyNlQ=="
-      DATABASE_URL: ecto://postgres:postgres@db:5432/handmade_hub_prod
+      PHX_HOST: ${PHX_HOST}
+      PORT: ${PHX_PORT}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE}
+      DATABASE_URL: ecto://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       environment:
-      GMAIL_USERNAME: eddiephiri44@gmail.com
-      GMAIL_APP_PASSWORD: gtqrsvotxqmbwpji
+      GMAIL_USERNAME: ${GMAIL_USERNAME}
+      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
     ports:
-      - "9706:9706"
+      - "${PHX_PORT}:${PHX_PORT}"
 
 volumes:
   db_data:
