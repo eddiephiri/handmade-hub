@@ -14,9 +14,15 @@ defmodule HandmadeHubWeb.AdminSessionController do
   def create(conn, %{"admin" => %{"email" => email, "password" => password} = params}) do
     case Admins.get_admin_by_email_and_password(email, password) do
       %_{} = admin ->
-        conn
-        |> put_flash(:info, "Welcome back, admin!")
-        |> AdminAuth.log_in_admin(admin, params)
+        if is_nil(admin.confirmed_at) do
+          conn
+          |> put_flash(:error, "Your account is pending approval")
+          |> redirect(to: ~p"/admin/log_in")
+        else
+          conn
+          |> put_flash(:info, "Welcome back, admin!")
+          |> AdminAuth.log_in_admin(admin, params)
+        end
       _ ->
         conn
         |> put_flash(:error, "Invalid email or password")

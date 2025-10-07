@@ -63,6 +63,32 @@ defmodule HandmadeHub.Admins do
     end
   end
 
+  # Admin approval functions
+  def approve_admin(%Admin{} = admin) do
+    admin
+    |> Ecto.Changeset.change(%{confirmed_at: DateTime.utc_now() |> DateTime.truncate(:second)})
+    |> Repo.update()
+  end
+
+  def reject_admin(%Admin{} = admin) do
+    # Rejection means deletion (can be changed to soft delete later)
+    Repo.delete(admin)
+  end
+
+  def pending_admins do
+    Admin
+    |> where([a], is_nil(a.confirmed_at))
+    |> order_by([a], asc: a.inserted_at)
+    |> Repo.all()
+  end
+
+  def approved_admins do
+    Admin
+    |> where([a], not is_nil(a.confirmed_at))
+    |> order_by([a], asc: a.inserted_at)
+    |> Repo.all()
+  end
+
   def get_admin_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
     admin = Repo.get_by(Admin, email: email)
