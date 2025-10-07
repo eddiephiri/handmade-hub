@@ -5,6 +5,7 @@ defmodule HandmadeHub.Accounts.User do
   schema "users" do
     field :email, :string
     field :password, :string, virtual: true, redact: true
+    field :password_confirmation, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :current_password, :string, virtual: true, redact: true
     field :confirmed_at, :utc_datetime
@@ -43,9 +44,10 @@ defmodule HandmadeHub.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password, :role])
+    |> cast(attrs, [:email, :password, :password_confirmation, :role])
     |> validate_email(opts)
     |> validate_password(opts)
+    |> validate_confirmation(:password, message: "does not match password")
     |> validate_inclusion(:role, ["buyer", "artisan"])
     |> validate_inclusion(:artisan_status, ["pending", "approved", "rejected", "suspended"])
     |> validate_required([:role])

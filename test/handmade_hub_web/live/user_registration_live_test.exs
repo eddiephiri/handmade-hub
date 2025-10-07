@@ -34,6 +34,21 @@ defmodule HandmadeHubWeb.UserRegistrationLiveTest do
       assert result =~ "must have the @ sign and no spaces"
       assert result =~ "should be at least 12 character"
     end
+
+    test "renders error when passwords do not match", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/users/register")
+
+      result =
+        lv
+        |> element("#registration_form")
+        |> render_change(user: %{
+          "email" => "test@example.com",
+          "password" => "securepassword123",
+          "password_confirmation" => "differentpassword123"
+        })
+
+      assert result =~ "does not match password"
+    end
   end
 
   describe "register user" do

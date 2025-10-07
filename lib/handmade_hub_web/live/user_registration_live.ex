@@ -28,8 +28,9 @@ defmodule HandmadeHubWeb.UserRegistrationLive do
           Oops, something went wrong! Please check the errors below.
         </.error>
 
-        <.input field={@form[:email]} type="email" label="Email" required />
-        <.input field={@form[:password]} type="password" label="Password" required />
+        <.input field={@form[:email]} type="email" label="Email" autocomplete="email" required />
+        <.input field={@form[:password]} type="password" label="Password" autocomplete="new-password" required />
+        <.input field={@form[:password_confirmation]} type="password" label="Confirm Password" autocomplete="new-password" required />
 
         <.input
           field={@form[:role]}
