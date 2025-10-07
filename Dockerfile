@@ -61,6 +61,9 @@ WORKDIR /app
 # Copy release from build stage (now includes static assets)
 COPY --from=build /app/_build/prod/rel/handmade_hub ./
 
+# Copy the priv directory (contains seeds and migrations)
+COPY --from=build /app/priv ./priv
+
 # Copy entrypoint script
 COPY docker/entry.sh /app/entry.sh
 RUN chmod +x /app/entry.sh
