@@ -104,7 +104,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                       field={@email_form[:email]}
                       type="email"
                       required
-                      autocomplete="off"
+                      autocomplete="email"
                       placeholder="Enter your new email"
                       class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
@@ -128,7 +128,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                       type="password"
                       required
                       placeholder="Enter your current password"
-                      autocomplete="off"
+                      autocomplete="current-password"
                       inputmode="text"
                       class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
@@ -195,6 +195,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                       field={@password_form[:password]}
                       type="password"
                       required
+                      autocomplete="new-password"
                       placeholder="Enter new password"
                       class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
@@ -215,6 +216,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                     <.input
                       field={@password_form[:password_confirmation]}
                       type="password"
+                      autocomplete="new-password"
                       placeholder="Confirm new password"
                       class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
@@ -237,6 +239,7 @@ defmodule HandmadeHubWeb.UserSettingsLive do
                       type="password"
                       id="current_password_for_password"
                       required
+                      autocomplete="current-password"
                       placeholder="Enter your current password"
                       class="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
                     />
