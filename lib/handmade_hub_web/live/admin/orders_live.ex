@@ -1,6 +1,6 @@
 defmodule HandmadeHubWeb.Admin.OrdersLive do
   use HandmadeHubWeb, :live_view
-  alias HandmadeHub.{Orders, Audit}
+  alias HandmadeHub.{Orders, Payments, Audit}
 
   @impl true
   def mount(_params, _session, socket) do
@@ -30,10 +30,26 @@ defmodule HandmadeHubWeb.Admin.OrdersLive do
     {:noreply, refresh(socket)}
   end
 
-  def handle_event("refund", %{"id" => id}, socket) do
-    {:ok, order} = Orders.refund_order(id)
-    _ = Audit.log_admin_action(admin_id: (socket.assigns[:current_admin] && socket.assigns.current_admin.id), target_user_id: order.user_id, action: "order_refunded", metadata: %{order_id: order.id})
-    {:noreply, refresh(socket)}
+  def handle_event("refund", %{"id" => id, "reason" => reason}, socket) do
+    order = Orders.get_order!(id)
+
+    case Payments.create_refund(order, order.total, reason) do
+      {:ok, _transaction} ->
+        _ = Audit.log_admin_action(
+          admin_id: (socket.assigns[:current_admin] && socket.assigns.current_admin.id),
+          target_user_id: order.user_id,
+          action: "order_refund_initiated",
+          metadata: %{order_id: order.id, amount: order.total, reason: reason}
+        )
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Refund initiated successfully")
+         |> refresh()}
+
+      {:error, reason_msg} ->
+        {:noreply, put_flash(socket, :error, "Failed to initiate refund: #{reason_msg}")}
+    end
   end
 
   defp refresh(socket) do

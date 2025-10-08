@@ -114,6 +114,77 @@
   </div>
 <% end %>
 
+<!-- Payment Management Section -->
+<div class="mb-8">
+  <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 shadow-sm border border-emerald-100">
+    <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-800">Payment Management</h3>
+          <p class="text-sm text-slate-600">Monitor transactions, payouts, and payment settings</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white/80 backdrop-blur rounded-xl p-4">
+        <p class="text-sm text-slate-500 mb-1">Total Transactions</p>
+        <p class="text-2xl font-bold text-slate-800"><%= @payment_stats.total_transactions %></p>
+      </div>
+      <div class="bg-white/80 backdrop-blur rounded-xl p-4">
+        <p class="text-sm text-slate-500 mb-1">Completed</p>
+        <p class="text-2xl font-bold text-emerald-600"><%= @payment_stats.completed_transactions %></p>
+      </div>
+      <div class="bg-white/80 backdrop-blur rounded-xl p-4">
+        <p class="text-sm text-slate-500 mb-1">Pending Payouts</p>
+        <p class="text-2xl font-bold text-amber-600"><%= @payment_stats.pending_payouts %></p>
+      </div>
+      <div class="bg-white/80 backdrop-blur rounded-xl p-4">
+        <p class="text-sm text-slate-500 mb-1">Total Paid Out</p>
+        <p class="text-2xl font-bold text-slate-800"><%= HandmadeHubWeb.FormatHelpers.format_currency(@payment_stats.total_payout_amount) %></p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+      <.link
+        navigate={~p"/admin/transactions"}
+        class="inline-flex items-center px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-medium rounded-lg shadow-sm border border-slate-200 transition-all duration-200"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        View Transactions
+      </.link>
+      <.link
+        navigate={~p"/admin/payouts"}
+        class="inline-flex items-center px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 font-medium rounded-lg shadow-sm border border-slate-200 transition-all duration-200"
+      >
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        Manage Payouts
+      </.link>
+      <%= if @current_admin.role == "super_admin" do %>
+        <.link
+          navigate={~p"/admin/payment-settings"}
+          class="inline-flex items-center px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 hover:shadow-lg"
+        >
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Payment Settings
+        </.link>
+      <% end %>
+    </div>
+  </div>
+</div>
+
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
   <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 xl:col-span-2">
     <h3 class="font-semibold mb-4">Monthly Orders & Revenue</h3>
