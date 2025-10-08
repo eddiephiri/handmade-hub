@@ -49,7 +49,7 @@ if config_env() == :prod do
       """
 
   host = System.get_env("PHX_HOST") || "example.com"
-  port = String.to_integer(System.get_env("PORT") || "4000")
+  port = String.to_integer(System.get_env("PHX_PORT") || "9706")
 
   config :handmade_hub, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
@@ -142,4 +142,10 @@ if config_env() == :prod do
 
   # Configure Swoosh API Client
   config :swoosh, :api_client, Swoosh.ApiClient.Finch
+
+  # Configure pawaPay payment gateway
+  config :handmade_hub,
+    pawapay_api_token: System.get_env("PAWAPAY_API_TOKEN"),
+    pawapay_base_url: System.get_env("PAWAPAY_BASE_URL") || "https://api.sandbox.pawapay.io",
+    pawapay_callback_url: System.get_env("PAWAPAY_CALLBACK_URL")
 end

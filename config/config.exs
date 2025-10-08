@@ -71,7 +71,9 @@ config :handmade_hub, HandmadeHub.Scheduler,
   timezone: :utc,
   jobs: [
     # Every minute, attempt to dispatch pending emails
-    {"* * * * *", {HandmadeHub.Notifications, :dispatch_pending_emails, []}}
+    {"* * * * *", {HandmadeHub.Notifications, :dispatch_pending_emails, []}},
+    # Every Monday at 9:00 AM UTC for weekly payouts
+    {"0 9 * * 1", {HandmadeHub.Payments.PayoutScheduler, :process_scheduled_payouts, []}}
   ]
 
 # Import environment specific config. This must remain at the bottom

@@ -49,10 +49,12 @@ defmodule HandmadeHubWeb.Router do
     end
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", HandmadeHubWeb do
-  #   pipe_through :api
-  # end
+  # API routes for webhooks
+  scope "/api", HandmadeHubWeb do
+    pipe_through :api
+
+    post "/pawapay/callback", PawapayWebhookController, :callback
+  end
 
   # Enable LiveDashboard and Swoosh mailbox preview in development
   if Application.compile_env(:handmade_hub, :dev_routes) do
@@ -180,6 +182,9 @@ defmodule HandmadeHubWeb.Router do
       live "/analytics", Admin.AnalyticsLive, :index
       get "/reports/orders.csv", AdminReportsController, :export_orders_csv
       live "/settings", Admin.SettingsLive, :index
+      live "/transactions", Admin.TransactionsLive, :index
+      live "/payouts", Admin.PayoutsLive, :index
+      live "/payment-settings", Admin.PaymentSettingsLive, :index
     end
   end
 end

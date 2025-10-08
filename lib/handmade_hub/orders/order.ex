@@ -11,21 +11,22 @@ defmodule HandmadeHub.Orders.Order do
     field :shipping_fee, :decimal, default: Decimal.new("0")
     field :total, :decimal
     field :notes, :string
-    
+
     # Customer info (for guest checkout)
     field :customer_email, :string
     field :customer_phone, :string
     field :customer_name, :string
-    
+
     # Payment details
     field :payment_reference, :string
     field :mobile_money_provider, :string
     field :mobile_money_number, :string
-    
+    field :pawapay_deposit_id, :string
+
     belongs_to :user, HandmadeHub.Accounts.User
     has_many :order_items, HandmadeHub.Orders.OrderItem
     has_one :shipping_address, HandmadeHub.Orders.ShippingAddress
-    
+
     timestamps(type: :utc_datetime)
   end
 
@@ -36,7 +37,7 @@ defmodule HandmadeHub.Orders.Order do
       :user_id, :order_number, :status, :payment_status, :payment_method,
       :subtotal, :shipping_fee, :total, :notes,
       :customer_email, :customer_phone, :customer_name,
-      :payment_reference, :mobile_money_provider, :mobile_money_number
+      :payment_reference, :mobile_money_provider, :mobile_money_number, :pawapay_deposit_id
     ])
     |> validate_required([:order_number, :subtotal, :total])
     |> validate_inclusion(:status, ~w(pending processing shipped delivered cancelled))

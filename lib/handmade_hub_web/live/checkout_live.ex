@@ -2,7 +2,7 @@ defmodule HandmadeHubWeb.CheckoutLive do
   use HandmadeHubWeb, :live_view
   import HandmadeHubWeb.FormatHelpers
 
-  alias HandmadeHub.{Shopping, Orders}
+  alias HandmadeHub.{Shopping, Orders, Payments}
   alias HandmadeHub.Orders.ShippingAddress
 
   @impl true
@@ -297,10 +297,13 @@ defmodule HandmadeHubWeb.CheckoutLive do
       payment_attrs
     ) do
       {:ok, order} ->
-        # Integrate with pawaPay Payment Page
-        case create_pawapay_payment_page(order, socket) do
+        # Create deposit and get payment page URL
+        return_url = url(~p"/checkout/return?order_id=#{order.id}")
+
+        case Payments.create_deposit(order, payment_attrs, return_url) do
           {:ok, redirect_url} ->
             Phoenix.LiveView.redirect(socket, external: redirect_url)
+
           {:error, msg} ->
             socket
             |> assign(:processing_payment, false)
@@ -325,42 +328,6 @@ defmodule HandmadeHubWeb.CheckoutLive do
      |> put_flash(:info, "Payment successful! Your order has been placed.")}
   end
 
-  defp create_pawapay_payment_page(order, socket) do
-    base_url = Application.get_env(:handmade_hub, :pawapay_base_url, "https://api.sandbox.pawapay.io")
-    api_token = Application.get_env(:handmade_hub, :pawapay_api_token)
-
-    if is_nil(api_token) do
-      {:error, "Payment provider is not configured."}
-    else
-      deposit_id = Ecto.UUID.generate()
-      return_url = url(~p"/checkout/return?depositId=#{deposit_id}&order_id=#{order.id}")
-      body = %{
-        depositId: deposit_id,
-        returnUrl: return_url,
-        reason: "Order ##{order.order_number}",
-        amountDetails: %{amount: Decimal.to_string(order.total), currency: "ZMW"},
-        phoneNumber: socket.assigns.mobile_money_number,
-        country: "ZMB"
-      }
-
-      headers = [
-        {"content-type", "application/json"},
-        {"authorization", "Bearer #{api_token}"}
-      ]
-
-      case Finch.build(:post, base_url <> "/v2/paymentpage", headers, Jason.encode!(body)) |> Finch.request(HandmadeHub.Finch) do
-        {:ok, %Finch.Response{status: 200, body: resp}} ->
-          case Jason.decode(resp) do
-            {:ok, %{"redirectUrl" => redirect_url}} -> {:ok, redirect_url}
-            _ -> {:error, "Unexpected response from payment provider."}
-          end
-        {:ok, %Finch.Response{status: status, body: resp}} ->
-          {:error, "Payment provider error (#{status}): #{resp}"}
-        {:error, reason} ->
-          {:error, "Failed to reach payment provider: #{inspect(reason)}"}
-      end
-    end
-  end
 
   defp get_cart(socket, session) do
     user_id = if socket.assigns[:current_user], do: socket.assigns.current_user.id, else: nil
