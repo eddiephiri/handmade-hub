@@ -164,6 +164,16 @@
             <span class="ml-3 font-medium js-collapsible-label">Analytics</span>
             <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/analytics") && "opacity-100"]}></div>
           </.link>
+          <%= if ad && ad.role == "super_admin" do %>
+            <.link navigate={~p"/admin/admins"} class={[
+              "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+              String.starts_with?(current_path, "/admin/admins") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+            ]}>
+              <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+              <span class="ml-3 font-medium js-collapsible-label">Admin Management</span>
+              <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/admins") && "opacity-100"]}></div>
+            </.link>
+          <% end %>
           <.link navigate={~p"/admin/settings"} class={[
             "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
             String.starts_with?(current_path, "/admin/settings") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"

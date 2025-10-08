@@ -73,6 +73,47 @@
   </div>
 </div>
 
+<%= if @current_admin.role == "super_admin" do %>
+  <div class="mb-8">
+    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 shadow-sm border border-indigo-100">
+      <div class="flex items-center justify-between">
+        <div class="flex-1">
+          <div class="flex items-center gap-3 mb-2">
+            <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center">
+              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-xl font-bold text-slate-800">Admin Management</h3>
+              <p class="text-sm text-slate-600">Create and manage admin users</p>
+            </div>
+          </div>
+          <%= if @pending_admins > 0 do %>
+            <div class="mt-4 inline-flex items-center px-3 py-1.5 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+              <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+              <%= @pending_admins %> pending approval<%= if @pending_admins > 1, do: "s", else: "" %>
+            </div>
+          <% end %>
+        </div>
+        <div>
+          <.link
+            navigate={~p"/admin/admins"}
+            class="inline-flex items-center px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-md transition-all duration-200 hover:shadow-lg"
+          >
+            Manage Admins
+            <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </.link>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>
+
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
   <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 xl:col-span-2">
     <h3 class="font-semibold mb-4">Monthly Orders & Revenue</h3>

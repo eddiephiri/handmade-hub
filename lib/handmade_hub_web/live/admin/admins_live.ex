@@ -28,6 +28,11 @@ defmodule HandmadeHubWeb.Admin.AdminsLive do
     {:noreply, assign(socket, show_modal: false)}
   end
 
+  # Prevent modal from closing when clicking inside the content area
+  def handle_event("ignore", _params, socket) do
+    {:noreply, socket}
+  end
+
   def handle_event("validate", %{"admin" => admin_params}, socket) do
     changeset =
       %Admin{}
@@ -120,23 +125,28 @@ defmodule HandmadeHubWeb.Admin.AdminsLive do
   def handle_event("delete", %{"id" => id}, socket) do
     admin = Admins.get_admin!(id)
 
-    case Admins.delete_admin(admin) do
-      {:ok, _} ->
-        _ =
-          Audit.log_admin_action(
-            admin_id: socket.assigns.current_admin.id,
-            target_user_id: nil,
-            action: "admin_deleted",
-            metadata: %{admin_id: admin.id}
-          )
+    # Prevent admins from deleting themselves
+    if admin.id == socket.assigns.current_admin.id do
+      {:noreply, put_flash(socket, :error, "You cannot delete your own account. Please ask another admin to do this.")}
+    else
+      case Admins.delete_admin(admin) do
+        {:ok, _} ->
+          _ =
+            Audit.log_admin_action(
+              admin_id: socket.assigns.current_admin.id,
+              target_user_id: nil,
+              action: "admin_deleted",
+              metadata: %{admin_id: admin.id}
+            )
 
-        {:noreply, assign(socket, admins: Admins.list_admins(search: socket.assigns.search))}
+          {:noreply, assign(socket, admins: Admins.list_admins(search: socket.assigns.search))}
 
-      {:error, :cannot_delete_last_super_admin} ->
-        {:noreply, put_flash(socket, :error, "Cannot delete the last super admin")}
+        {:error, :cannot_delete_last_super_admin} ->
+          {:noreply, put_flash(socket, :error, "Cannot delete the last super admin")}
 
-      {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not delete admin")}
+        {:error, _} ->
+          {:noreply, put_flash(socket, :error, "Could not delete admin")}
+      end
     end
   end
 

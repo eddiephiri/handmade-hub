@@ -41,6 +41,9 @@ defmodule HandmadeHubWeb.Admin.DashboardLive do
     pending_products = Repo.aggregate(from(p in Product, where: is_nil(p.removed_at) and p.approval_status == "pending"), :count)
     flagged_reviews = Repo.aggregate(from(r in HandmadeHub.Reviews.Review, where: r.flagged == true), :count)
 
+    # Count pending admins (for super_admin only)
+    pending_admins = length(HandmadeHub.Admins.pending_admins())
+
     recent_orders = Orders.list_orders_admin(%{}) |> Enum.take(6)
     recent_signups = Repo.all(from u in User, order_by: [desc: u.inserted_at], limit: 6)
 
@@ -52,6 +55,7 @@ defmodule HandmadeHubWeb.Admin.DashboardLive do
       pending_artisans: pending_artisans,
       pending_products: pending_products,
       flagged_reviews: flagged_reviews,
+      pending_admins: pending_admins,
       recent_orders: recent_orders,
       recent_signups: recent_signups
     )
