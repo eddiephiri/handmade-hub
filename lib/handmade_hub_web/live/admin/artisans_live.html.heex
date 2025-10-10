@@ -1,38 +1,43 @@
 <div class="max-w-7xl mx-auto p-6">
   <h1 class="text-2xl font-bold mb-6">Artisans</h1>
 
-  <div class="flex items-center gap-4 mb-4">
+  <div class="flex items-end gap-4 mb-6">
     <form phx-change="search">
-      <input type="text" name="q" value={@search} placeholder="Search name or email" class="border rounded px-3 py-2" />
+      <input type="text" name="q" value={@search} placeholder="Search name or email" class="rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2 text-sm" />
     </form>
     <form phx-change="filter">
-      <select name="status" class="border rounded px-3 py-2" value={@status}>
-        <option value="">All</option>
-        <option value="pending">Pending</option>
-        <option value="approved">Approved</option>
-        <option value="rejected">Rejected</option>
-        <option value="suspended">Suspended</option>
-      </select>
+      <div>
+        <label class="block text-xs text-slate-600 mb-1">Status</label>
+        <select name="status" class="rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-3 py-2" value={@status}>
+          <option value="">All</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="suspended">Suspended</option>
+        </select>
+      </div>
     </form>
   </div>
 
-  <div class="bg-white rounded-lg border border-gray-100 overflow-hidden">
-    <table class="min-w-full text-sm">
-      <thead class="bg-gray-50">
+  <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+    <table class="w-full">
+      <thead class="bg-slate-50 border-b border-slate-200">
         <tr>
-          <th class="text-left p-3">Name</th>
-          <th class="text-left p-3">Email</th>
-          <th class="text-left p-3">Status</th>
-          <th class="text-left p-3">Actions</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Email</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-slate-200">
         <%= for a <- @artisans do %>
-          <tr class="border-t">
-            <td class="p-3"><%= a.name || "—" %></td>
-            <td class="p-3"><%= a.email %></td>
-            <td class="p-3"><span class="px-2 py-1 rounded bg-gray-100"><%= a.artisan_status %></span></td>
-            <td class="p-3 space-x-2">
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900"><%= a.name || "—" %></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600"><%= a.email %></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-50 text-slate-700"><%= a.artisan_status %></span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
               <.link navigate={~p"/admin/artisans/#{a.id}"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">View</.link>
               <button phx-click="set_status" phx-value-id={a.id} phx-value-status="approved" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Approve</button>
               <button phx-click="set_status" phx-value-id={a.id} phx-value-status="rejected" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Reject</button>
@@ -43,6 +48,16 @@
         <% end %>
       </tbody>
     </table>
+
+    <%= if Enum.empty?(@artisans) do %>
+      <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-slate-900">No artisans found</h3>
+        <p class="mt-1 text-sm text-slate-500">Try adjusting your search or filters</p>
+      </div>
+    <% end %>
   </div>
 </div>
 

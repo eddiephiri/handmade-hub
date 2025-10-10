@@ -1,30 +1,46 @@
-<div class="max-w-3xl mx-auto p-6">
-  <h1 class="text-2xl font-bold mb-6">System Settings</h1>
-  <.simple_form for={to_form(%{}, as: :settings)} phx-submit="save">
-    <div class="grid grid-cols-1 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Maintenance Mode</label>
-        <select name="maintenance_mode" class="mt-1 border rounded px-2 py-1">
-          <option value="false" selected={@maintenance_mode == false}>Off</option>
-          <option value="true" selected={@maintenance_mode == true}>On</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Payment Gateway</label>
-        <select name="payment_gateway" class="mt-1 border rounded px-2 py-1">
-          <option value="stripe" selected={@payment_gateway == "stripe"}>Stripe</option>
-          <option value="pawapay" selected={@payment_gateway == "pawapay"}>pawaPay</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Commission Rate (%)</label>
-        <input type="number" name="commission_rate" min="0" max="100" value={@commission_rate} class="mt-1 border rounded px-2 py-1 w-32" />
-      </div>
+<div class="mx-auto max-w-5xl px-6 py-10">
+  <div class="mb-6 flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-semibold text-gray-900">System Settings</h1>
+      <p class="mt-1 text-sm text-gray-500">Configure global platform options for operations.</p>
     </div>
-    <:actions>
-      <.button>Save Settings</.button>
-    </:actions>
-  </.simple_form>
+  </div>
+
+  <div class="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-200">
+    <.simple_form for={to_form(%{}, as: :settings)} phx-submit="save">
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Maintenance Mode</label>
+          <select name="maintenance_mode" class="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="false" selected={@maintenance_mode == false}>Off</option>
+            <option value="true" selected={@maintenance_mode == true}>On</option>
+          </select>
+          <p class="mt-2 text-xs text-gray-500">Temporarily disable user actions for maintenance.</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Payment Gateway</label>
+          <select name="payment_gateway" class="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="stripe" selected={@payment_gateway == "stripe"}>Stripe</option>
+            <option value="pawapay" selected={@payment_gateway == "pawapay"}>pawaPay</option>
+          </select>
+          <p class="mt-2 text-xs text-gray-500">Choose the provider used to process payments.</p>
+        </div>
+
+        <div class="md:col-span-1">
+          <label class="block text-sm font-medium text-gray-700">Commission Rate (%)</label>
+          <input type="number" name="commission_rate" min="0" max="100" value={@commission_rate} class="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:max-w-xs" />
+          <p class="mt-2 text-xs text-gray-500">Percentage taken from each successful order.</p>
+        </div>
+      </div>
+
+      <:actions>
+        <div class="mt-8 flex items-center justify-end gap-3">
+          <.button class="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">Save Settings</.button>
+        </div>
+      </:actions>
+    </.simple_form>
+  </div>
 </div>
 
 

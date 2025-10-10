@@ -1,5 +1,5 @@
 <div class="max-w-7xl mx-auto p-6">
-  <h1 class="text-2xl font-bold mb-4">Products</h1>
+  <h1 class="text-2xl font-bold mb-6">Products</h1>
 
   <div class="flex items-center gap-3 mb-4">
     <form phx-change="search">
@@ -18,27 +18,27 @@
     </form>
   </div>
 
-  <div class="bg-white border rounded">
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="bg-gray-50 text-left">
-          <th class="p-3">Name</th>
-          <th class="p-3">Artisan</th>
-          <th class="p-3">Status</th>
-          <th class="p-3">Category</th>
-          <th class="p-3">Price</th>
-          <th class="p-3"></th>
+  <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+    <table class="w-full">
+      <thead class="bg-slate-50 border-b border-slate-200">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Artisan</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Price</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider"></th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="divide-y divide-slate-200">
         <%= for p <- @products do %>
-          <tr class="border-t">
-            <td class="p-3"><.link navigate={~p"/admin/products/#{p.id}"}><%= p.name %></.link></td>
-            <td class="p-3"><%= if p.artisan, do: (p.artisan.name || p.artisan.email), else: "—" %></td>
-            <td class="p-3"><%= String.capitalize(p.approval_status) %></td>
-            <td class="p-3"><%= p.category || "—" %></td>
-            <td class="p-3"><%= HandmadeHubWeb.FormatHelpers.format_currency(p.price) %></td>
-            <td class="p-3 space-x-2 text-right">
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900"><.link navigate={~p"/admin/products/#{p.id}"}><%= p.name %></.link></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600"><%= if p.artisan, do: (p.artisan.name || p.artisan.email), else: "—" %></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-50 text-slate-700"><%= String.capitalize(p.approval_status) %></span></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600"><%= p.category || "—" %></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900"><%= HandmadeHubWeb.FormatHelpers.format_currency(p.price) %></td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2 text-right">
               <%= if p.approval_status != "approved" do %>
                 <button phx-click="approve" phx-value-id={p.id} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Approve</button>
               <% end %>
@@ -51,6 +51,16 @@
         <% end %>
       </tbody>
     </table>
+
+    <%= if Enum.empty?(@products) do %>
+      <div class="text-center py-12">
+        <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-slate-900">No products found</h3>
+        <p class="mt-1 text-sm text-slate-500">Try adjusting your search or filters</p>
+      </div>
+    <% end %>
   </div>
 </div>
 
