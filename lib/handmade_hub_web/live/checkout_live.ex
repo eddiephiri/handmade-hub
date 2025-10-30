@@ -27,7 +27,7 @@ defmodule HandmadeHubWeb.CheckoutLive do
             <.form for={@shipping_form} as={:shipping_address} id="shipping_form" phx-change="validate_shipping" phx-submit="save_shipping" class="grid grid-cols-1 gap-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700">Recipient Name <span class="text-red-600">*</span></label>
-                <input name="recipient_name" type="text" value={Phoenix.HTML.Form.input_value(@shipping_form, :recipient_name)} required class={[
+                <input name={@shipping_form[:recipient_name].name} type="text" value={Phoenix.HTML.Form.input_value(@shipping_form, :recipient_name)} required class={[
                   "mt-1 w-full rounded-lg",
                   @shipping_changeset.errors[:recipient_name] && "border-red-500" || "border-gray-300"
                 ]} />
@@ -37,11 +37,11 @@ defmodule HandmadeHubWeb.CheckoutLive do
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Recipient Email</label>
-                <input name="recipient_email" type="email" value={Phoenix.HTML.Form.input_value(@shipping_form, :recipient_email)} class="mt-1 w-full border-gray-300 rounded-lg" />
+                <input name={@shipping_form[:recipient_email].name} type="email" value={Phoenix.HTML.Form.input_value(@shipping_form, :recipient_email)} class="mt-1 w-full border-gray-300 rounded-lg" />
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Phone Number <span class="text-red-600">*</span></label>
-                <input name="phone_number" type="tel" value={Phoenix.HTML.Form.input_value(@shipping_form, :phone_number)} required class={[
+                <input name={@shipping_form[:phone_number].name} type="tel" value={Phoenix.HTML.Form.input_value(@shipping_form, :phone_number)} required class={[
                   "mt-1 w-full rounded-lg",
                   @shipping_changeset.errors[:phone_number] && "border-red-500" || "border-gray-300"
                 ]} />
@@ -51,7 +51,7 @@ defmodule HandmadeHubWeb.CheckoutLive do
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Address Line 1 <span class="text-red-600">*</span></label>
-                <input name="address_line_1" type="text" value={Phoenix.HTML.Form.input_value(@shipping_form, :address_line_1)} required class={[
+                <input name={@shipping_form[:address_line_1].name} type="text" value={Phoenix.HTML.Form.input_value(@shipping_form, :address_line_1)} required class={[
                   "mt-1 w-full rounded-lg",
                   @shipping_changeset.errors[:address_line_1] && "border-red-500" || "border-gray-300"
                 ]} />
@@ -61,12 +61,12 @@ defmodule HandmadeHubWeb.CheckoutLive do
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Address Line 2 (optional)</label>
-                <input name="address_line_2" type="text" class="mt-1 w-full border-gray-300 rounded-lg" />
+                <input name={@shipping_form[:address_line_2].name} type="text" class="mt-1 w-full border-gray-300 rounded-lg" />
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Suburb / Residential Area</label>
-                  <select name="city" required class={[
+                  <select name={@shipping_form[:city].name} required class={[
                     "mt-1 w-full rounded-lg",
                     @shipping_changeset.errors[:city] && "border-red-500" || "border-gray-300"
                   ]}>
@@ -82,7 +82,7 @@ defmodule HandmadeHubWeb.CheckoutLive do
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700">Delivery Instructions (optional)</label>
-                <textarea name="delivery_instructions" class="mt-1 w-full border-gray-300 rounded-lg" rows="3" placeholder="Gate code, landmark, preferred time, etc."></textarea>
+                <textarea name={@shipping_form[:delivery_instructions].name} class="mt-1 w-full border-gray-300 rounded-lg" rows="3" placeholder="Gate code, landmark, preferred time, etc."></textarea>
               </div>
               <div class="flex justify-end">
                 <button class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Continue to Payment</button>
@@ -118,7 +118,7 @@ defmodule HandmadeHubWeb.CheckoutLive do
                 <div>
                   <label class="block text-sm font-medium text-gray-700">Mobile Number</label>
                   <form phx-change="update_mobile_number">
-                    <input type="tel" name="mobile_number" value={@mobile_money_number} placeholder="e.g. 0977xxxxxx or 26097xxxxxx" class="mt-1 w-full border-gray-300 rounded-lg" />
+                    <input type="tel" name="mobile_number" value={@mobile_money_number} phx-debounce="300" placeholder="e.g. 0977xxxxxx or 26097xxxxxx" class="mt-1 w-full border-gray-300 rounded-lg" />
                   </form>
                 </div>
               </div>
@@ -239,13 +239,15 @@ defmodule HandmadeHubWeb.CheckoutLive do
   @impl true
   def handle_event("select_mobile_money_provider", %{"provider" => provider}, socket) do
     socket = assign(socket, :mobile_money_provider, provider)
-    {:noreply, assign(socket, :can_continue_payment, payment_ready?(socket.assigns))}
+    assigns = %{socket.assigns | mobile_money_provider: provider}
+    {:noreply, assign(socket, :can_continue_payment, payment_ready?(assigns))}
   end
 
   @impl true
   def handle_event("update_mobile_number", %{"mobile_number" => number}, socket) do
     socket = assign(socket, :mobile_money_number, number)
-    {:noreply, assign(socket, :can_continue_payment, payment_ready?(socket.assigns))}
+    assigns = %{socket.assigns | mobile_money_number: number}
+    {:noreply, assign(socket, :can_continue_payment, payment_ready?(assigns))}
   end
 
   @impl true

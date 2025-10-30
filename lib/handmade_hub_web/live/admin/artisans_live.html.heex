@@ -39,10 +39,12 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
               <.link navigate={~p"/admin/artisans/#{a.id}"} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100">View</.link>
-              <button phx-click="set_status" phx-value-id={a.id} phx-value-status="approved" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Approve</button>
-              <button phx-click="set_status" phx-value-id={a.id} phx-value-status="rejected" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Reject</button>
-              <button phx-click="set_status" phx-value-id={a.id} phx-value-status="suspended" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100">Suspend</button>
-              <button phx-click="set_status" phx-value-id={a.id} phx-value-status="pending" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-zinc-50 text-zinc-700 hover:bg-zinc-100">Reset</button>
+              <%= if a.artisan_status != "approved" do %>
+                <button phx-click="confirm_status_change" phx-value-id={a.id} phx-value-status="approved" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-emerald-50 text-emerald-700 hover:bg-emerald-100">Approve</button>
+              <% end %>
+              <button phx-click="confirm_status_change" phx-value-id={a.id} phx-value-status="rejected" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Reject</button>
+              <button phx-click="confirm_status_change" phx-value-id={a.id} phx-value-status="suspended" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-amber-50 text-amber-700 hover:bg-amber-100">Suspend</button>
+              <button phx-click="confirm_status_change" phx-value-id={a.id} phx-value-status="pending" class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-zinc-50 text-zinc-700 hover:bg-zinc-100">Reset</button>
             </td>
           </tr>
         <% end %>
@@ -60,5 +62,18 @@
     <% end %>
   </div>
 </div>
+
+<%= if @confirming_action do %>
+  <.modal id="confirmation-modal" show on_cancel={JS.push("clear_confirm_status_change")}>
+    <div class="p-4">
+      <h2 class="text-lg font-bold mb-4">Confirm Action</h2>
+      <p>Are you sure you want to <%= confirmation_action_message(@confirming_action.status) %> this artisan?</p>
+      <div class="mt-6 flex justify-end gap-4">
+        <button phx-click="clear_confirm_status_change" class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300">Cancel</button>
+        <button phx-click="execute_status_change" phx-value-id={@confirming_action.id} phx-value-status={@confirming_action.status} class="px-4 py-2 rounded-md bg-blue-500 text-white hover:bg-blue-600">Confirm</button>
+      </div>
+    </div>
+  </.modal>
+<% end %>
 
 
