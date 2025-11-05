@@ -1,12 +1,13 @@
 defmodule HandmadeHubWeb.Admin.OrdersLive do
   use HandmadeHubWeb, :live_view
-  alias HandmadeHub.{Orders, Payments, Audit}
+  alias HandmadeHub.{Orders, Payments, Audit, Delivery}
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(search: "", status: "", payment_status: "", orders: Orders.list_orders_admin())}
+     |> assign(search: "", status: "", payment_status: "", orders: Orders.list_orders_admin())
+     |> assign(show_assign_modal: false, selected_order: nil, available_riders: [])}
   end
 
   @impl true
@@ -49,6 +50,44 @@ defmodule HandmadeHubWeb.Admin.OrdersLive do
 
       {:error, reason_msg} ->
         {:noreply, put_flash(socket, :error, "Failed to initiate refund: #{reason_msg}")}
+    end
+  end
+
+  @impl true
+  def handle_event("open_assign_modal", %{"order_id" => order_id}, socket) do
+    order = Orders.get_order!(order_id)
+    riders = Delivery.list_active_riders()
+
+    {:noreply,
+     socket
+     |> assign(show_assign_modal: true, selected_order: order, available_riders: riders)}
+  end
+
+  @impl true
+  def handle_event("close_assign_modal", _params, socket) do
+    {:noreply, assign(socket, show_assign_modal: false, selected_order: nil)}
+  end
+
+  @impl true
+  def handle_event("assign_rider", %{"order_id" => order_id, "rider_id" => rider_id}, socket) do
+    admin = socket.assigns.current_admin
+
+    case Delivery.assign_order_to_rider(order_id, rider_id, admin.id) do
+      {:ok, _assignment} ->
+        _ = Audit.log_admin_action(
+          admin_id: admin.id,
+          action: "delivery_rider_assigned",
+          metadata: %{order_id: order_id, rider_id: rider_id}
+        )
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Rider assigned successfully")
+         |> assign(show_assign_modal: false, selected_order: nil)
+         |> refresh()}
+
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to assign rider")}
     end
   end
 

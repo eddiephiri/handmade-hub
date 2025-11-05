@@ -15,6 +15,7 @@ alias HandmadeHub.Accounts
 alias HandmadeHub.Accounts.User
 alias HandmadeHub.Admins
 alias HandmadeHub.Admins.Admin
+alias HandmadeHub.Delivery
 import Ecto.Changeset
 
 # Function to create a user, ensuring they are confirmed and have a profile
@@ -53,6 +54,16 @@ defmodule Seed do
         IO.inspect(changeset, label: "Error creating admin: #{attrs[:email]}")
     end
   end
+
+  def create_rider(attrs) do
+    IO.puts("Creating rider: #{attrs[:name]}")
+    case Delivery.create_rider(attrs) do
+      {:ok, rider} ->
+        IO.puts("Successfully created rider: #{attrs[:name]}")
+      {:error, changeset} ->
+        IO.inspect(changeset, label: "Error creating rider: #{attrs[:name]}")
+    end
+  end
 end
 
 IO.puts("Seeding database...")
@@ -82,6 +93,28 @@ Seed.create_admin(%{
   password: "password1234",
   role: "super_admin",
   permissions: %{"all" => true}
+})
+
+# Create delivery riders
+Seed.create_rider(%{
+  name: "John Banda",
+  phone_number: "0977123456",
+  status: "active",
+  vehicle_type: "motorbike"
+})
+
+Seed.create_rider(%{
+  name: "Mary Mwamba",
+  phone_number: "0977456789",
+  status: "active",
+  vehicle_type: "motorbike"
+})
+
+Seed.create_rider(%{
+  name: "Peter Chanda",
+  phone_number: "0977567890",
+  status: "active",
+  vehicle_type: "motorbike"
 })
 
 IO.puts("Database seeding finished.")

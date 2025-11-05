@@ -1,0 +1,62 @@
+<div class="max-w-7xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-6">Delivery Riders</h1>
+
+  <div class="mb-4">
+    <%= if @form do %>
+      <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4 mb-4">
+        <h2 class="text-lg font-semibold mb-4">Add New Rider</h2>
+        <.simple_form for={@form} phx-submit="save_rider">
+          <.input field={@form[:name]} type="text" label="Name" />
+          <.input field={@form[:phone_number]} type="text" label="Phone Number" />
+          <.input field={@form[:status]} type="select" label="Status" options={[{"Active", "active"}, {"Inactive", "inactive"}, {"Suspended", "suspended"}]} />
+          <:actions>
+            <button type="button" phx-click="cancel_add" class="px-4 py-2 border rounded">Cancel</button>
+            <.button>Save</.button>
+          </:actions>
+        </.simple_form>
+      </div>
+    <% else %>
+      <button phx-click="add_rider"
+              class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+        + Add Rider
+      </button>
+    <% end %>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
+    <table class="w-full">
+      <thead class="bg-slate-50 border-b border-slate-200">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Name</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Phone</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-200">
+        <%= for rider <- @riders do %>
+          <tr class="hover:bg-slate-50">
+            <td class="px-6 py-4 text-sm text-slate-900"><%= rider.name %></td>
+            <td class="px-6 py-4 text-sm text-slate-600"><%= rider.phone_number %></td>
+            <td class="px-6 py-4 text-sm">
+              <%= cond do
+                rider.status == "active" ->
+                  "<span class=\"px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800\">Active</span>" |> raw()
+                rider.status == "suspended" ->
+                  "<span class=\"px-2.5 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800\">Suspended</span>" |> raw()
+                true ->
+                  "<span class=\"px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800\">Inactive</span>" |> raw()
+              end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <%= if Enum.empty?(@riders) do %>
+      <div class="text-center py-12">
+        <p class="text-slate-500">No riders found. Add your first rider above.</p>
+      </div>
+    <% end %>
+  </div>
+</div>
+

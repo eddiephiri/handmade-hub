@@ -26,6 +26,7 @@ defmodule HandmadeHub.Orders.Order do
     belongs_to :user, HandmadeHub.Accounts.User
     has_many :order_items, HandmadeHub.Orders.OrderItem
     has_one :shipping_address, HandmadeHub.Orders.ShippingAddress
+    has_one :delivery_assignment, HandmadeHub.Delivery.Assignment
 
     timestamps(type: :utc_datetime)
   end

@@ -31,6 +31,7 @@
           <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Order #</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Customer</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Rider</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Payment</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Total</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
@@ -47,6 +48,22 @@
                   <option value={s} selected={o.status == s}><%= String.capitalize(s) %></option>
                 <% end %>
               </select>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+              <%= if o.delivery_assignment && o.delivery_assignment.rider do %>
+                <div class="flex items-center space-x-2">
+                  <span class="text-slate-900"><%= o.delivery_assignment.rider.name %></span>
+                  <button phx-click="open_assign_modal" phx-value-order_id={o.id}
+                          class="text-xs text-indigo-600 hover:underline">
+                    Change
+                  </button>
+                </div>
+              <% else %>
+                <button phx-click="open_assign_modal" phx-value-order_id={o.id}
+                        class="text-xs text-indigo-600 hover:underline">
+                  Assign Rider
+                </button>
+              <% end %>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <select phx-change="update_payment_status" phx-value-id={o.id} name="payment_status" class="rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm px-2 py-1.5">
@@ -75,5 +92,32 @@
     <% end %>
   </div>
 </div>
+
+<!-- Assign Rider Modal -->
+<%= if @show_assign_modal do %>
+  <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full">
+      <h2 class="text-xl font-bold mb-4">Assign Delivery Rider</h2>
+
+      <form phx-submit="assign_rider" phx-value-order_id={@selected_order.id}>
+        <select name="rider_id" class="w-full border rounded px-3 py-2 mb-4" required>
+          <option value="">Select a rider...</option>
+          <%= for rider <- @available_riders do %>
+            <option value={rider.id}>
+              <%= rider.name %> - <%= rider.phone_number %>
+            </option>
+          <% end %>
+        </select>
+
+        <div class="flex justify-end space-x-2">
+          <button type="button" phx-click="close_assign_modal"
+                  class="px-4 py-2 border rounded">Cancel</button>
+          <button type="submit"
+                  class="px-4 py-2 bg-indigo-600 text-white rounded">Assign</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<% end %>
 
 

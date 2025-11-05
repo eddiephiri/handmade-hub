@@ -185,6 +185,7 @@ defmodule HandmadeHubWeb.Router do
       live "/transactions", Admin.TransactionsLive, :index
       live "/payouts", Admin.PayoutsLive, :index
       live "/payment-settings", Admin.PaymentSettingsLive, :index
+      live "/delivery/riders", Admin.DeliveryRidersLive, :index
     end
   end
 end
