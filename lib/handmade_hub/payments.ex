@@ -78,13 +78,17 @@ defmodule HandmadeHub.Payments do
   end
 
   defp request_payment_page(order, deposit_id, return_url, payment_params) do
+    phone_number =
+      payment_params["mobile_money_number"]
+      |> normalize_msisdn()
+
     params = %{
       deposit_id: deposit_id,
       return_url: return_url,
       reason: "Order ##{order.order_number}",
       amount: order.total,
       currency: "ZMW",
-      phone_number: payment_params["mobile_money_number"],
+      phone_number: phone_number,
       country: "ZMB"
     }
 
@@ -189,6 +193,20 @@ defmodule HandmadeHub.Payments do
         "MTN_MOMO_ZMB" # Default
     end
   end
+
+  defp normalize_msisdn(nil), do: nil
+
+  defp normalize_msisdn(number) when is_binary(number) do
+    digits = String.replace(number, ~r/\D/, "")
+
+    cond do
+      String.starts_with?(digits, "260") and String.length(digits) == 12 -> digits
+      String.starts_with?(digits, "0") and String.length(digits) == 10 -> "260" <> String.slice(digits, 1, 9)
+      true -> digits
+    end
+  end
+
+  defp normalize_msisdn(_), do: nil
 
   @doc """
   Processes a payout callback from pawaPay.
