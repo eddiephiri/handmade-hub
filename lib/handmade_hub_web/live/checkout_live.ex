@@ -245,8 +245,19 @@ defmodule HandmadeHubWeb.CheckoutLive do
 
   @impl true
   def handle_event("update_mobile_number", %{"mobile_number" => number}, socket) do
-    socket = assign(socket, :mobile_money_number, number)
-    assigns = %{socket.assigns | mobile_money_number: number}
+    inferred_provider = infer_provider_from_number(number)
+
+    socket =
+      socket
+      |> assign(:mobile_money_number, number)
+      |> assign(:mobile_money_provider, inferred_provider || socket.assigns.mobile_money_provider)
+
+    assigns = %{
+      socket.assigns
+      | mobile_money_number: number,
+        mobile_money_provider: socket.assigns.mobile_money_provider || inferred_provider
+    }
+
     {:noreply, assign(socket, :can_continue_payment, payment_ready?(assigns))}
   end
 
@@ -355,6 +366,20 @@ defmodule HandmadeHubWeb.CheckoutLive do
   defp valid_phone_number?(number) do
     Regex.match?(~r/^(0|260)\d{9}$/, number || "")
   end
+
+  # Attempts to infer the mobile money provider from a Zambian phone number
+  # Supports numbers starting with 0xxxxxxx or 260xxxxxxx
+  defp infer_provider_from_number(number) when is_binary(number) do
+    digits = String.replace(number, ~r/\D/, "")
+
+    cond do
+      String.starts_with?(digits, ["097", "26097"]) -> "airtel"
+      String.starts_with?(digits, ["095", "26095"]) -> "zamtel"
+      String.starts_with?(digits, ["096", "26096", "076", "26076"]) -> "mtn"
+      true -> nil
+    end
+  end
+  defp infer_provider_from_number(_), do: nil
 
   defp payment_ready?(assigns) do
     case assigns.payment_method do

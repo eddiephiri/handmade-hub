@@ -1,20 +1,40 @@
 defmodule HandmadeHub.Repo.Migrations.CreateDeliveryAssignments do
   use Ecto.Migration
 
-  def change do
-    create table(:delivery_assignments) do
-      add :order_id, references(:orders, on_delete: :nilify_all), null: false
-      add :rider_id, references(:delivery_riders, on_delete: :nilify_all), null: false
-      add :assigned_by_admin_id, references(:admins, on_delete: :nilify_all)
-      add :status, :string, default: "dispatched"
-      add :notes, :text
+  def up do
+    # Create table only if it doesn't exist
+    execute("""
+      CREATE TABLE IF NOT EXISTS delivery_assignments (
+        id BIGSERIAL PRIMARY KEY,
+        order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE SET NULL,
+        rider_id BIGINT NOT NULL REFERENCES delivery_riders(id) ON DELETE SET NULL,
+        assigned_by_admin_id BIGINT REFERENCES admins(id) ON DELETE SET NULL,
+        status VARCHAR(255) DEFAULT 'dispatched',
+        notes TEXT,
+        inserted_at TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP NOT NULL
+      )
+    """)
 
-      timestamps(type: :utc_datetime)
-    end
+    # Create unique index on order_id (only if it doesn't exist)
+    # Note: unique_index already creates an index, so we don't need a separate index on order_id
+    execute("""
+      CREATE UNIQUE INDEX IF NOT EXISTS delivery_assignments_order_id_index
+      ON delivery_assignments (order_id)
+    """)
 
-    create index(:delivery_assignments, [:order_id])
-    create index(:delivery_assignments, [:rider_id])
-    create index(:delivery_assignments, [:status])
-    create unique_index(:delivery_assignments, [:order_id])
+    execute("""
+      CREATE INDEX IF NOT EXISTS delivery_assignments_rider_id_index
+      ON delivery_assignments (rider_id)
+    """)
+
+    execute("""
+      CREATE INDEX IF NOT EXISTS delivery_assignments_status_index
+      ON delivery_assignments (status)
+    """)
+  end
+
+  def down do
+    execute("DROP TABLE IF EXISTS delivery_assignments")
   end
 end

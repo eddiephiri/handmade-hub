@@ -114,7 +114,8 @@ defmodule HandmadeHub.Orders do
         order_number: Order.generate_order_number(),
         user_id: user && user.id,
         customer_email: user && user.email || payment_attrs["customer_email"],
-        customer_phone: user && user.phone || payment_attrs["customer_phone"],
+        # Some user schemas do not include a :phone field; safely read and fallback
+        customer_phone: (user && Map.get(user, :phone)) || payment_attrs["customer_phone"],
         customer_name: user && user.name || payment_attrs["customer_name"],
         subtotal: subtotal,
         shipping_fee: shipping_fee,
@@ -208,15 +209,27 @@ defmodule HandmadeHub.Orders do
 
   @doc """
   Updates order payment status after successful payment.
+  Automatically assigns a rider if available.
   """
   def mark_order_as_paid(order_id, payment_reference) do
+    alias HandmadeHub.Delivery
+
     order = get_order!(order_id)
 
-    update_order(order, %{
+    case update_order(order, %{
       payment_status: "paid",
       payment_reference: payment_reference,
       status: "processing"
-    })
+    }) do
+      {:ok, updated_order} ->
+        # Auto-assign rider if available (non-blocking)
+        # Errors are logged and admins notified, but don't fail the payment
+        _ = Delivery.auto_assign_rider_to_order(updated_order.id)
+        {:ok, updated_order}
+
+      error ->
+        error
+    end
   end
 
   @doc """
