@@ -80,6 +80,31 @@ defmodule HandmadeHub.Delivery do
   end
 
   @doc """
+  Returns assignment records for the admin deliveries view with eager-loaded details.
+
+  Accepts optional filters via a map:
+
+    * `:status` - filters by assignment status
+    * `:search` - performs an ilike search across assignment id, order/customer fields, and rider name/phone
+  """
+  def list_assignments_admin(opts \\ %{}) do
+    assignment_with_details_query()
+    |> apply_status_filter(Map.get(opts, :status))
+    |> apply_search(Map.get(opts, :search))
+    |> order_by([a], desc: a.inserted_at)
+    |> Repo.all()
+  end
+
+  @doc """
+  Fetches a single assignment with associated order, rider, and admin details preloaded.
+  """
+  def get_assignment_with_details!(id) do
+    assignment_with_details_query()
+    |> where([a], a.id == ^id)
+    |> Repo.one!()
+  end
+
+  @doc """
   Gets an assignment by order_id.
   """
   def get_assignment_by_order_id(order_id) do
@@ -117,11 +142,12 @@ defmodule HandmadeHub.Delivery do
             assignment = Repo.preload(assignment, [:order, :rider, :assigned_by_admin])
 
             # Preload shipping address if order exists
-            assignment = if assignment.order do
-              %{assignment | order: Repo.preload(assignment.order, [:shipping_address])}
-            else
-              assignment
-            end
+            assignment =
+              if assignment.order do
+                %{assignment | order: Repo.preload(assignment.order, [:shipping_address])}
+              else
+                assignment
+              end
 
             # Send email to rider
             DeliveryNotifier.deliver_assignment_notification(assignment)
@@ -135,19 +161,24 @@ defmodule HandmadeHub.Delivery do
       existing_assignment ->
         # Assignment exists, update it (reassignment)
         case update_assignment(existing_assignment, %{
-          rider_id: rider_id,
-          assigned_by_admin_id: admin_id,
-          status: "dispatched"
-        }) do
+               rider_id: rider_id,
+               assigned_by_admin_id: admin_id,
+               status: "dispatched"
+             }) do
           {:ok, updated_assignment} ->
-            updated_assignment = Repo.preload(updated_assignment, [:order, :rider, :assigned_by_admin])
+            updated_assignment =
+              Repo.preload(updated_assignment, [:order, :rider, :assigned_by_admin])
 
             # Preload shipping address if order exists
-            updated_assignment = if updated_assignment.order do
-              %{updated_assignment | order: Repo.preload(updated_assignment.order, [:shipping_address])}
-            else
-              updated_assignment
-            end
+            updated_assignment =
+              if updated_assignment.order do
+                %{
+                  updated_assignment
+                  | order: Repo.preload(updated_assignment.order, [:shipping_address])
+                }
+              else
+                updated_assignment
+              end
 
             # Send email to new rider about reassignment
             DeliveryNotifier.deliver_assignment_notification(updated_assignment)
@@ -180,11 +211,15 @@ defmodule HandmadeHub.Delivery do
         updated_assignment = Repo.preload(updated_assignment, [:order, :rider])
 
         # Preload shipping address if order exists
-        updated_assignment = if updated_assignment.order do
-          %{updated_assignment | order: Repo.preload(updated_assignment.order, [:shipping_address])}
-        else
-          updated_assignment
-        end
+        updated_assignment =
+          if updated_assignment.order do
+            %{
+              updated_assignment
+              | order: Repo.preload(updated_assignment.order, [:shipping_address])
+            }
+          else
+            updated_assignment
+          end
 
         # Send email notification based on status
         DeliveryNotifier.deliver_status_update(updated_assignment)
@@ -221,7 +256,10 @@ defmodule HandmadeHub.Delivery do
 
       existing_assignment ->
         # Order already has a rider assigned
-        Logger.info("Order #{order_id} already has rider assigned: #{existing_assignment.rider_id}")
+        Logger.info(
+          "Order #{order_id} already has rider assigned: #{existing_assignment.rider_id}"
+        )
+
         {:ok, existing_assignment}
     end
   end
@@ -252,7 +290,10 @@ defmodule HandmadeHub.Delivery do
               # Order already assigned (race condition)
               case get_assignment_by_order_id(order_id) do
                 nil ->
-                  Logger.error("Failed to auto-assign rider to order #{order_id}: #{inspect(errors)}")
+                  Logger.error(
+                    "Failed to auto-assign rider to order #{order_id}: #{inspect(errors)}"
+                  )
+
                   notify_admin_assignment_failed(order_id, inspect(errors))
                   {:error, :assignment_failed}
 
@@ -372,6 +413,55 @@ defmodule HandmadeHub.Delivery do
         })
     end)
 
-    Logger.warning("Notified admins about assignment failure for order #{order_id}: #{error_details}")
+    Logger.warning(
+      "Notified admins about assignment failure for order #{order_id}: #{error_details}"
+    )
+  end
+
+  defp assignment_with_details_query do
+    from a in Assignment,
+      left_join: o in assoc(a, :order),
+      left_join: u in assoc(o, :user),
+      left_join: sa in assoc(o, :shipping_address),
+      left_join: r in assoc(a, :rider),
+      left_join: admin in assoc(a, :assigned_by_admin),
+      preload: [
+        order: {o, [user: u, shipping_address: sa]},
+        rider: r,
+        assigned_by_admin: admin
+      ]
+  end
+
+  defp apply_status_filter(query, status) when status in [nil, ""], do: query
+
+  defp apply_status_filter(query, status) do
+    where(query, [a], a.status == ^status)
+  end
+
+  defp apply_search(query, search) when search in [nil, ""], do: query
+
+  defp apply_search(query, search) do
+    term =
+      search
+      |> String.trim()
+
+    if term == "" do
+      query
+    else
+      like = "%#{term}%"
+
+      from [a, o, u, _sa, r, admin] in query,
+        where:
+          ilike(fragment("CAST(? AS TEXT)", a.id), ^like) or
+            ilike(coalesce(o.order_number, ""), ^like) or
+            ilike(coalesce(o.customer_name, ""), ^like) or
+            ilike(coalesce(o.customer_email, ""), ^like) or
+            ilike(coalesce(o.customer_phone, ""), ^like) or
+            ilike(coalesce(r.name, ""), ^like) or
+            ilike(coalesce(r.phone_number, ""), ^like) or
+            ilike(coalesce(u.name, ""), ^like) or
+            ilike(coalesce(u.email, ""), ^like) or
+            ilike(coalesce(admin.username, ""), ^like)
+    end
   end
 end

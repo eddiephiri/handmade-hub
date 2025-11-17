@@ -148,6 +148,14 @@
             <span class="ml-3 font-medium js-collapsible-label">Orders</span>
             <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/orders") && "opacity-100"]}></div>
           </.link>
+          <.link navigate={~p"/admin/deliveries"} class={[
+            "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+            String.starts_with?(current_path, "/admin/deliveries") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ]}>
+            <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2 4 4 8-8 4 4-12 12z"/></svg>
+            <span class="ml-3 font-medium js-collapsible-label">Deliveries</span>
+            <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity js-collapsible-label", String.starts_with?(current_path, "/admin/deliveries") && "opacity-100"]}></div>
+          </.link>
           <.link navigate={~p"/admin/delivery/riders"} class={[
             "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
             String.starts_with?(current_path, "/admin/delivery") && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"

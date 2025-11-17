@@ -178,6 +178,8 @@ defmodule HandmadeHubWeb.Router do
       live "/products", Admin.ProductsLive, :index
       live "/products/:id", Admin.ProductShowLive, :show
       live "/orders", Admin.OrdersLive, :index
+      live "/deliveries", Admin.DeliveriesLive, :index
+      live "/deliveries/:id", Admin.DeliveryShowLive, :show
       live "/reviews", Admin.ReviewsLive, :index
       live "/analytics", Admin.AnalyticsLive, :index
       get "/reports/orders.csv", AdminReportsController, :export_orders_csv

@@ -1,0 +1,97 @@
+<div class="max-w-7xl mx-auto p-6 space-y-6">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <p class="text-sm font-semibold text-indigo-600 uppercase tracking-wide">Logistics</p>
+      <h1 class="text-2xl font-bold text-slate-900">Deliveries</h1>
+      <p class="text-sm text-slate-500 mt-1">Monitor rider assignments and last-mile status.</p>
+    </div>
+    <.link navigate={~p"/admin/delivery/riders"} class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 shadow-sm text-sm font-medium text-slate-700 hover:bg-slate-50">
+      Manage Riders
+    </.link>
+  </div>
+
+  <.summary_cards status_counts={@status_counts} />
+
+  <div class="bg-white border border-slate-200 rounded-2xl shadow-sm">
+    <div class="px-6 py-4 flex flex-col lg:flex-row lg:items-center gap-4 border-b border-slate-200">
+      <form phx-change="search" class="flex-1">
+        <.input type="text" name="q" value={@search} placeholder="Search by delivery ID, order number, customer, rider..." phx-debounce="400" />
+      </form>
+      <form phx-change="filter" class="flex items-center gap-2">
+        <label class="text-sm text-slate-500">Status</label>
+        <select name="status" value={@status} class="rounded-lg border border-slate-300 text-sm px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+          <%= for {label, value} <- @status_options do %>
+            <option value={value} selected={@status == value}><%= label %></option>
+          <% end %>
+        </select>
+      </form>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <tr>
+            <th class="px-6 py-3">Delivery ID</th>
+            <th class="px-6 py-3">Order</th>
+            <th class="px-6 py-3">Customer</th>
+            <th class="px-6 py-3">Rider</th>
+            <th class="px-6 py-3">Status</th>
+            <th class="px-6 py-3">Updated</th>
+            <th class="px-6 py-3 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 text-sm">
+          <%= for delivery <- @deliveries do %>
+            <tr class="hover:bg-slate-50 transition-colors">
+              <td class="px-6 py-4 font-semibold text-slate-900">DLV-<%= delivery.id %></td>
+              <td class="px-6 py-4">
+                <div class="font-medium text-slate-900"><%= delivery.order && delivery.order.order_number || "—" %></div>
+                <div class="text-xs text-slate-500">Order ID: <%= delivery.order_id %></div>
+              </td>
+              <td class="px-6 py-4">
+                <div class="font-medium text-slate-900">
+                  <%= delivery_customer_name(delivery) %>
+                </div>
+                <div class="text-xs text-slate-500">
+                  <%= delivery_customer_contact(delivery) %>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <%= if delivery.rider do %>
+                  <div class="font-medium text-slate-900"><%= delivery.rider.name %></div>
+                  <div class="text-xs text-slate-500"><%= delivery.rider.phone_number %></div>
+                <% else %>
+                  <span class="text-xs text-amber-600">Unassigned</span>
+                <% end %>
+              </td>
+              <td class="px-6 py-4">
+                <span class={["inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold", status_badge_class(delivery.status)]}>
+                  <%= format_status(delivery.status) %>
+                </span>
+              </td>
+              <td class="px-6 py-4 text-slate-600">
+                <%= format_timestamp(delivery.updated_at || delivery.inserted_at) %>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <.link navigate={~p"/admin/deliveries/#{delivery.id}"} class="inline-flex items-center px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-medium text-slate-700 hover:bg-slate-50">
+                  View details
+                </.link>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%= if Enum.empty?(@deliveries) do %>
+      <div class="text-center py-12 border-t border-slate-100">
+        <svg class="mx-auto h-12 w-12 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <h3 class="mt-4 text-sm font-semibold text-slate-900">No deliveries match your filters</h3>
+        <p class="mt-2 text-sm text-slate-500">Adjust your search terms or clear filters to see more results.</p>
+      </div>
+    <% end %>
+  </div>
+</div>
+
