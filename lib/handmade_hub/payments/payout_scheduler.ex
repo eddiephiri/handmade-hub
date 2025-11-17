@@ -59,14 +59,16 @@ defmodule HandmadeHub.Payments.PayoutScheduler do
   @doc """
   Gets list of artisans who are due for payout based on settings.
   """
-  def get_artisans_due_for_payout(settings) do
+  def get_artisans_due_for_payout(settings, opts \\ []) do
+    meets_minimum_fun = Keyword.get(opts, :meets_minimum_fun, &Earnings.meets_minimum_payout?/1)
+
     from(u in User,
       where: u.role == "artisan",
-      where: u.approved == true
+      where: u.artisan_status == "approved"
     )
     |> Repo.all()
     |> Enum.filter(fn artisan ->
-      Earnings.meets_minimum_payout?(artisan.id)
+      meets_minimum_fun.(artisan.id)
     end)
   end
 

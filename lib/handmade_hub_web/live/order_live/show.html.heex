@@ -161,15 +161,16 @@
       <div class="bg-white shadow-sm rounded-lg p-6">
         <h2 class="text-lg font-semibold text-gray-900 mb-4">Shipping Information</h2>
         <%= if @order.shipping_address do %>
+          <% address = @order.shipping_address %>
           <div class="text-sm text-gray-600 space-y-1">
-            <p class="font-medium text-gray-900"><%= @order.shipping_address.recipient_name %></p>
-            <p><%= @order.shipping_address.street_address %></p>
-            <%= if @order.shipping_address.apartment_suite do %>
-              <p><%= @order.shipping_address.apartment_suite %></p>
+            <p class="font-medium text-gray-900"><%= address.recipient_name %></p>
+            <%= for line <- shipping_address_lines(address) do %>
+              <p><%= line %></p>
             <% end %>
-            <p><%= @order.shipping_address.city %>, <%= @order.shipping_address.province %></p>
-            <p><%= @order.shipping_address.postal_code %></p>
-            <p class="pt-2">Phone: <%= @order.shipping_address.phone_number %></p>
+            <p class="pt-2">Phone: <%= address.phone_number %></p>
+            <%= if present?(address.delivery_instructions) do %>
+              <p class="text-gray-500"><span class="font-medium text-gray-700">Instructions:</span> <%= address.delivery_instructions %></p>
+            <% end %>
           </div>
         <% else %>
           <p class="text-sm text-gray-500">No shipping information available</p>

@@ -188,4 +188,32 @@ defmodule HandmadeHubWeb.OrderLive.Show do
 
     events
   end
+
+  def shipping_address_lines(nil), do: []
+
+  def shipping_address_lines(address) do
+    [
+      address.address_line_1,
+      address.address_line_2,
+      city_province_line(address),
+      address.postal_code,
+      address.country
+    ]
+    |> Enum.reject(&blank?/1)
+  end
+
+  def present?(value), do: not blank?(value)
+
+  defp city_province_line(address) do
+    line =
+      [address.city, address.province]
+      |> Enum.reject(&blank?/1)
+      |> Enum.join(", ")
+
+    if line == "", do: nil, else: line
+  end
+
+  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
+  defp blank?(nil), do: true
+  defp blank?(_), do: false
 end
