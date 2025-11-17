@@ -9,12 +9,19 @@ defmodule HandmadeHub.Orders do
   alias HandmadeHub.Catalog
   alias HandmadeHub.Shopping
 
+  @order_preloads [
+    :user,
+    :order_items,
+    :shipping_address,
+    delivery_assignment: [:rider]
+  ]
+
   @doc """
   Returns the list of orders.
   """
   def list_orders do
     Repo.all(Order)
-    |> Repo.preload([:user, :order_items, :shipping_address, :delivery_assignment])
+    |> Repo.preload(@order_preloads)
   end
 
   @doc """
@@ -49,7 +56,7 @@ defmodule HandmadeHub.Orders do
     end)
     |> order_by([o], desc: o.inserted_at)
     |> Repo.all()
-    |> Repo.preload([:user, :order_items, :shipping_address, :delivery_assignment])
+    |> Repo.preload(@order_preloads)
   end
 
   @doc """
@@ -60,7 +67,7 @@ defmodule HandmadeHub.Orders do
     |> where([o], o.user_id == ^user_id)
     |> order_by([o], desc: o.inserted_at)
     |> Repo.all()
-    |> Repo.preload([:order_items, :shipping_address, :delivery_assignment])
+    |> Repo.preload(@order_preloads)
   end
 
   @doc """
@@ -69,7 +76,7 @@ defmodule HandmadeHub.Orders do
   def get_order!(id) do
     Order
     |> Repo.get!(id)
-    |> Repo.preload([:user, :order_items, :shipping_address, :delivery_assignment])
+    |> Repo.preload(@order_preloads)
   end
 
   @doc """
@@ -79,7 +86,7 @@ defmodule HandmadeHub.Orders do
     Order
     |> where([o], o.order_number == ^order_number)
     |> Repo.one()
-    |> Repo.preload([:user, :order_items, :shipping_address, :delivery_assignment])
+    |> Repo.preload(@order_preloads)
   end
 
   @doc """
