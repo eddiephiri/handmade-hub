@@ -12,7 +12,7 @@ defmodule HandmadeHub.ArtisanOrders do
   Returns the list of orders for products belonging to an artisan.
   """
   def list_artisan_orders(artisan_id, filters \\ %{}) do
-    base_query = 
+    base_query =
       from o in Order,
         join: oi in OrderItem, on: oi.order_id == o.id,
         join: p in Product, on: p.id == oi.product_id,
@@ -57,16 +57,16 @@ defmodule HandmadeHub.ArtisanOrders do
   """
   def get_artisan_stats(artisan_id, date_range \\ :all_time) do
     {start_date, end_date} = get_date_range(date_range)
-    
+
     # Base query for artisan's order items
-    base_query = 
+    base_query =
       from oi in OrderItem,
         join: p in Product, on: p.id == oi.product_id,
         join: o in Order, on: o.id == oi.order_id,
         where: p.artisan_id == ^artisan_id
 
     # Add date filtering if needed
-    date_filtered_query = 
+    date_filtered_query =
       if start_date do
         from [oi, p, o] in base_query,
           where: o.inserted_at >= ^start_date and o.inserted_at <= ^end_date
@@ -75,22 +75,22 @@ defmodule HandmadeHub.ArtisanOrders do
       end
 
     # Total orders (distinct)
-    total_orders = 
+    total_orders =
       from([oi, p, o] in date_filtered_query,
         select: count(o.id, :distinct)
       )
       |> Repo.one() || 0
 
     # Revenue calculation
-    revenue_query = 
+    revenue_query =
       from [oi, p, o] in date_filtered_query,
         where: o.payment_status == "paid",
         select: sum(oi.subtotal)
-    
+
     total_revenue = Repo.one(revenue_query) || Decimal.new("0")
 
     # Pending orders
-    pending_orders = 
+    pending_orders =
       from([oi, p, o] in date_filtered_query,
         where: o.status == "pending",
         select: count(o.id, :distinct)
@@ -98,7 +98,7 @@ defmodule HandmadeHub.ArtisanOrders do
       |> Repo.one() || 0
 
     # Processing orders
-    processing_orders = 
+    processing_orders =
       from([oi, p, o] in date_filtered_query,
         where: o.status == "processing",
         select: count(o.id, :distinct)
@@ -106,7 +106,7 @@ defmodule HandmadeHub.ArtisanOrders do
       |> Repo.one() || 0
 
     # Completed orders
-    completed_orders = 
+    completed_orders =
       from([oi, p, o] in date_filtered_query,
         where: o.status == "delivered",
         select: count(o.id, :distinct)
@@ -114,7 +114,7 @@ defmodule HandmadeHub.ArtisanOrders do
       |> Repo.one() || 0
 
     # Total items sold
-    items_sold = 
+    items_sold =
       from([oi, p, o] in date_filtered_query,
         where: o.payment_status == "paid",
         select: sum(oi.quantity)
@@ -122,7 +122,7 @@ defmodule HandmadeHub.ArtisanOrders do
       |> Repo.one() || 0
 
     # Best selling products
-    best_sellers = 
+    best_sellers =
       from([oi, p, o] in date_filtered_query,
         where: o.payment_status == "paid",
         group_by: [p.id, p.name],
@@ -157,7 +157,7 @@ defmodule HandmadeHub.ArtisanOrders do
   Gets revenue statistics by time period.
   """
   def get_revenue_by_period(artisan_id, period \\ :monthly) do
-    query = 
+    query =
       from oi in OrderItem,
         join: p in Product, on: p.id == oi.product_id,
         join: o in Order, on: o.id == oi.order_id,
@@ -211,12 +211,12 @@ defmodule HandmadeHub.ArtisanOrders do
   def update_artisan_order_status(artisan_id, order_id, status) do
     # Verify the artisan has items in this order
     artisan_items = get_artisan_order_items(artisan_id, order_id)
-    
+
     if Enum.empty?(artisan_items) do
       {:error, "You don't have any items in this order"}
     else
       order = Repo.get!(Order, order_id)
-      
+
       # Update the status based on business logic
       # For simplicity, we'll update the entire order status
       # In a real marketplace, you might track individual item statuses
@@ -305,11 +305,11 @@ defmodule HandmadeHub.ArtisanOrders do
   defp get_monthly_revenue_trend(artisan_id) do
     six_months_ago = Date.utc_today() |> Date.add(-180)
     six_months_ago_datetime = DateTime.new!(six_months_ago, ~T[00:00:00], "Etc/UTC")
-    
+
     from(oi in OrderItem,
       join: p in Product, on: p.id == oi.product_id,
       join: o in Order, on: o.id == oi.order_id,
-      where: p.artisan_id == ^artisan_id and 
+      where: p.artisan_id == ^artisan_id and
              o.payment_status == "paid" and
              o.inserted_at >= ^six_months_ago_datetime,
       group_by: [fragment("EXTRACT(YEAR FROM ?)", o.inserted_at), fragment("EXTRACT(MONTH FROM ?)", o.inserted_at)],
@@ -322,13 +322,24 @@ defmodule HandmadeHub.ArtisanOrders do
     )
     |> Repo.all()
     |> Enum.map(fn %{year: year, month: month, revenue: revenue} ->
-      month_name = get_month_name(trunc(month))
-      %{label: "#{month_name} #{trunc(year)}", value: revenue}
+      month_int = to_integer(month)
+      year_int = to_integer(year)
+      month_name = get_month_name(month_int)
+      %{label: "#{month_name} #{year_int}", value: revenue}
     end)
   end
 
   defp get_month_name(month) do
     ~w(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
     |> Enum.at(month - 1)
+  end
+
+  defp to_integer(value) when is_integer(value), do: value
+  defp to_integer(value) when is_float(value), do: trunc(value)
+
+  defp to_integer(%Decimal{} = value) do
+    value
+    |> Decimal.round(0)
+    |> Decimal.to_integer()
   end
 end
