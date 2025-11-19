@@ -7,10 +7,13 @@ ENV MIX_ENV=prod \
     LANG=C.UTF-8
 
 # Install build dependencies: build-essential, git, node for assets if needed
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends build-essential git curl nodejs npm && \
+# Use /tmp for apt cache to avoid space issues in /var/cache/apt/archives
+RUN mkdir -p /tmp/apt-cache && \
+    apt-get update -y && \
+    apt-get install -y -o Dir::Cache::Archives=/tmp/apt-cache \
+        --no-install-recommends build-essential git curl nodejs npm && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/apt-cache/*
 
 WORKDIR /app
 
@@ -49,10 +52,12 @@ RUN cp -r priv/static _build/prod/rel/handmade_hub/
 # ---- Runtime image ----
 FROM debian:bookworm-slim AS app
 
-RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends openssl ca-certificates libstdc++6 curl netcat-openbsd && \
+RUN mkdir -p /tmp/apt-cache && \
+    apt-get update -y && \
+    apt-get install -y -o Dir::Cache::Archives=/tmp/apt-cache \
+        --no-install-recommends openssl ca-certificates libstdc++6 curl netcat-openbsd && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/apt-cache/*
 
 ENV LANG=C.UTF-8 \
     MIX_ENV=prod \
