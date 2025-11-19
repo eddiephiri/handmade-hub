@@ -5,6 +5,7 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
   alias HandmadeHub.Catalog
   alias HandmadeHub.Messaging
   alias HandmadeHub.Reviews
+  alias HandmadeHub.Payments
 
   @impl true
   def mount(_params, _session, socket) do
@@ -79,7 +80,10 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
             payment_status: ""
           },
           stats_period: :this_month,
-          show_print_modal: false
+          show_print_modal: false,
+          # Payouts related assigns
+          payouts: [],
+          payout_filter_status: nil
         )}
     end
   end
@@ -245,6 +249,21 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
       _ -> 0.0
     end
     {:noreply, assign(socket, page: :reviews, artisan_reviews: reviews, avg_rating: avg_float)}
+  end
+
+  def handle_event("show_payouts", _params, socket) do
+    user_id = socket.assigns.current_user.id
+    payouts = Payments.list_payouts(%{artisan_id: user_id})
+    {:noreply, assign(socket, page: :payouts, payouts: payouts, payout_filter_status: nil)}
+  end
+
+  def handle_event("filter_payouts", %{"status" => status}, socket) do
+    user_id = socket.assigns.current_user.id
+    filter_status = if status == "", do: nil, else: status
+    filters = %{artisan_id: user_id}
+    filters = if filter_status, do: Map.put(filters, :status, filter_status), else: filters
+    payouts = Payments.list_payouts(filters)
+    {:noreply, assign(socket, payouts: payouts, payout_filter_status: filter_status)}
   end
 
   # New: Messages section handlers
@@ -576,6 +595,21 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                 </svg>
                 <span class={["ml-3 font-medium", @sidebar_collapsed && "hidden"]}>Orders</span>
                 <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity", @page == :orders && "opacity-100", @sidebar_collapsed && "hidden"]}></div>
+              </button>
+
+              <!-- Payouts -->
+              <button
+                phx-click="show_payouts"
+                class={[
+                  "w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group",
+                  @page == :payouts && "bg-blue-50 text-blue-600 shadow-sm" || "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                ]}
+              >
+                <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span class={["ml-3 font-medium", @sidebar_collapsed && "hidden"]}>Payouts</span>
+                <div class={["ml-auto w-2 h-2 bg-blue-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity", @page == :payouts && "opacity-100", @sidebar_collapsed && "hidden"]}></div>
               </button>
 
               <!-- Messages -->
@@ -1534,6 +1568,176 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                     <.button>Change password</.button>
                   </:actions>
                 </.simple_form>
+              </div>
+            </div>
+          <% end %>
+
+          <%= if @page == :payouts do %>
+            <div class="space-y-8">
+              <div>
+                <h1 class="text-3xl font-bold text-slate-800 mb-2">My Payouts</h1>
+                <p class="text-slate-600">Track your payment history and earnings</p>
+              </div>
+
+              <!-- Payout Stats Cards -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-slate-600">Total Payouts</p>
+                      <p class="text-3xl font-bold text-slate-800 mt-2"><%= length(@payouts) %></p>
+                    </div>
+                    <div class="p-3 bg-blue-100 rounded-lg">
+                      <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-slate-600">Total Earned</p>
+                      <p class="text-3xl font-bold text-green-600 mt-2">
+                        <%= format_currency(
+                          @payouts
+                          |> Enum.filter(&(&1.status == "completed"))
+                          |> Enum.reduce(Decimal.new("0"), fn p, acc -> Decimal.add(acc, p.net_amount || Decimal.new("0")) end)
+                        ) %>
+                      </p>
+                    </div>
+                    <div class="p-3 bg-green-100 rounded-lg">
+                      <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-slate-600">Pending</p>
+                      <p class="text-3xl font-bold text-yellow-600 mt-2">
+                        <%= @payouts
+                        |> Enum.filter(&(&1.status in ["pending", "processing"]))
+                        |> length() %>
+                      </p>
+                    </div>
+                    <div class="p-3 bg-yellow-100 rounded-lg">
+                      <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Filter Section -->
+              <div class="bg-white rounded-xl shadow-sm p-6 border border-slate-100">
+                <div class="flex items-center gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Status</label>
+                    <select
+                      phx-change="filter_payouts"
+                      name="status"
+                      class="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="pending" selected={@payout_filter_status == "pending"}>Pending</option>
+                      <option value="processing" selected={@payout_filter_status == "processing"}>Processing</option>
+                      <option value="completed" selected={@payout_filter_status == "completed"}>Completed</option>
+                      <option value="failed" selected={@payout_filter_status == "failed"}>Failed</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payouts Table -->
+              <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-slate-200">
+                    <thead class="bg-slate-50">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Payout ID
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Period
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Gross Amount
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Platform Fee
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Net Amount
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-slate-200">
+                      <%= if @payouts && length(@payouts) > 0 do %>
+                        <%= for payout <- @payouts do %>
+                          <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                              #<%= payout.id %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                              <%= payout.payment_period || "N/A" %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
+                              <%= format_currency(payout.amount || Decimal.new("0")) %> <%= payout.currency %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                              <%= format_currency(payout.platform_fee || Decimal.new("0")) %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-900">
+                              <%= format_currency(payout.net_amount || Decimal.new("0")) %> <%= payout.currency %>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                              <span class={[
+                                "px-2.5 py-1 text-xs font-medium rounded-full",
+                                payout.status == "completed" && "bg-green-50 text-green-700",
+                                payout.status == "processing" && "bg-blue-50 text-blue-700",
+                                payout.status == "pending" && "bg-yellow-50 text-yellow-700",
+                                payout.status == "failed" && "bg-red-50 text-red-700"
+                              ]}>
+                                <%= String.capitalize(payout.status) %>
+                              </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
+                              <%= if payout.completed_at do %>
+                                <%= Calendar.strftime(payout.completed_at, "%Y-%m-%d") %>
+                              <% else %>
+                                <%= Calendar.strftime(payout.scheduled_date || payout.inserted_at, "%Y-%m-%d") %>
+                              <% end %>
+                            </td>
+                          </tr>
+                        <% end %>
+                      <% else %>
+                        <tr>
+                          <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                            <svg class="mx-auto h-12 w-12 text-slate-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <p class="text-lg font-medium">No payouts found</p>
+                            <p class="text-sm text-slate-400 mt-1">
+                              <%= if @payout_filter_status, do: "Try adjusting your filters", else: "Your payout history will appear here" %>
+                            </p>
+                          </td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           <% end %>
