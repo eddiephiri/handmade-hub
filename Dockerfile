@@ -9,7 +9,8 @@ ENV MIX_ENV=prod \
 # Install build dependencies: build-essential, git, node for assets if needed
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends build-essential git curl nodejs npm && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 WORKDIR /app
 
@@ -50,7 +51,8 @@ FROM debian:bookworm-slim AS app
 
 RUN apt-get update -y && \
     apt-get install -y --no-install-recommends openssl ca-certificates libstdc++6 curl netcat-openbsd && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 ENV LANG=C.UTF-8 \
     MIX_ENV=prod \
