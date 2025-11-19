@@ -216,4 +216,161 @@ defmodule HandmadeHubWeb.OrderLive.Show do
   defp blank?(value) when is_binary(value), do: String.trim(value) == ""
   defp blank?(nil), do: true
   defp blank?(_), do: false
+
+  ## Delivery Tracking Helpers
+
+  @doc """
+  Checks if an order has a delivery assignment.
+  """
+  def has_delivery_assignment?(order) do
+    not is_nil(order.delivery_assignment) and not is_nil(order.delivery_assignment.rider)
+  end
+
+  @doc """
+  Gets the delivery status color for styling.
+  """
+  def get_delivery_status_color(status) do
+    case status do
+      "dispatched" -> "bg-blue-100 text-blue-800"
+      "in_transit" -> "bg-indigo-100 text-indigo-800"
+      "delivered" -> "bg-green-100 text-green-800"
+      "failed" -> "bg-red-100 text-red-800"
+      _ -> "bg-gray-100 text-gray-800"
+    end
+  end
+
+  @doc """
+  Gets the delivery status icon.
+  """
+  def get_delivery_status_icon(status) do
+    case status do
+      "dispatched" -> "📦"
+      "in_transit" -> "🚚"
+      "delivered" -> "✅"
+      "failed" -> "❌"
+      _ -> "📋"
+    end
+  end
+
+  @doc """
+  Formats a phone number for display and ensures it's in the correct format for tel: links.
+  Handles both formats: 0977123456 and 260977123456
+  """
+  def format_rider_phone(phone_number) when is_binary(phone_number) do
+    # Remove any spaces or dashes
+    cleaned = phone_number
+              |> String.replace(~r/[\s-]/, "")
+              |> String.trim()
+
+    # If it starts with 260, keep it; if it starts with 0, replace with 260
+    cond do
+      String.starts_with?(cleaned, "260") -> cleaned
+      String.starts_with?(cleaned, "0") and String.length(cleaned) > 1 ->
+        "260" <> String.slice(cleaned, 1..-1)
+      true -> cleaned
+    end
+  end
+
+  def format_rider_phone(nil), do: nil
+
+  @doc """
+  Gets delivery timeline events based on assignment status.
+  """
+  def get_delivery_timeline_events(order) do
+    case order.delivery_assignment do
+      nil -> []
+      assignment ->
+        events = []
+
+        # Rider assigned event
+        events = events ++ [%{
+          title: "Rider Assigned",
+          description: "A delivery rider has been assigned to your order",
+          timestamp: assignment.inserted_at,
+          completed: true,
+          icon: "👤"
+        }]
+
+        # Status-specific events
+        events = case assignment.status do
+          "dispatched" ->
+            events ++ [%{
+              title: "Dispatched",
+              description: "Your order is ready for pickup",
+              timestamp: assignment.updated_at,
+              completed: true,
+              icon: "📦"
+            }]
+
+          "in_transit" ->
+            events ++ [
+              %{
+                title: "Dispatched",
+                description: "Your order is ready for pickup",
+                timestamp: assignment.inserted_at,
+                completed: true,
+                icon: "📦"
+              },
+              %{
+                title: "In Transit",
+                description: "Your order is on the way to you",
+                timestamp: assignment.updated_at,
+                completed: true,
+                icon: "🚚"
+              }
+            ]
+
+          "delivered" ->
+            events ++ [
+              %{
+                title: "Dispatched",
+                description: "Your order is ready for pickup",
+                timestamp: assignment.inserted_at,
+                completed: true,
+                icon: "📦"
+              },
+              %{
+                title: "In Transit",
+                description: "Your order is on the way to you",
+                timestamp: assignment.inserted_at,
+                completed: true,
+                icon: "🚚"
+              },
+              %{
+                title: "Delivered",
+                description: "Your order has been successfully delivered",
+                timestamp: assignment.updated_at,
+                completed: true,
+                icon: "✅"
+              }
+            ]
+
+          "failed" ->
+            events ++ [%{
+              title: "Delivery Failed",
+              description: assignment.notes || "Delivery attempt was unsuccessful",
+              timestamp: assignment.updated_at,
+              completed: true,
+              icon: "❌"
+            }]
+
+          _ -> events
+        end
+
+        events
+    end
+  end
+
+  @doc """
+  Gets a human-readable delivery status description.
+  """
+  def get_delivery_status_description(status) do
+    case status do
+      "dispatched" -> "Your order has been assigned to a delivery rider and is ready for pickup"
+      "in_transit" -> "Your order is on the way to your delivery address"
+      "delivered" -> "Your order has been successfully delivered"
+      "failed" -> "The delivery attempt was unsuccessful. Please contact support for assistance"
+      _ -> "Delivery status unknown"
+    end
+  end
 end

@@ -7,13 +7,17 @@ ENV MIX_ENV=prod \
     LANG=C.UTF-8
 
 # Install build dependencies: build-essential, git, node for assets if needed
-# Use /tmp for apt cache to avoid space issues in /var/cache/apt/archives
-RUN mkdir -p /tmp/apt-cache && \
+# Install in smaller batches with cleanup between to minimize disk usage
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends build-essential git curl && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
     apt-get update -y && \
-    apt-get install -y -o Dir::Cache::Archives=/tmp/apt-cache \
-        --no-install-recommends build-essential git curl nodejs npm && \
+    apt-get install -y --no-install-recommends nodejs && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
+    apt-get update -y && \
+    apt-get install -y --no-install-recommends npm && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/apt-cache/*
+    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
 WORKDIR /app
 
