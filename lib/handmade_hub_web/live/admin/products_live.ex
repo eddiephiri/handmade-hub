@@ -6,7 +6,7 @@ defmodule HandmadeHubWeb.Admin.ProductsLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(search: "", status: "pending", category: "", products: Catalog.list_products_for_admin(approval_status: "pending"))}
+     |> assign(search: "", status: "pending", category: "", products: Catalog.list_products_for_admin(approval_status: "pending"), show_view_modal: false, selected_product: nil)}
   end
 
   @impl true
@@ -29,21 +29,30 @@ defmodule HandmadeHubWeb.Admin.ProductsLive do
     product = Catalog.get_product!(id)
     {:ok, product} = Catalog.approve_product(product)
     _ = Audit.log_admin_action(admin_id: (socket.assigns[:current_admin] && socket.assigns.current_admin.id), target_user_id: product.artisan_id, action: "product_approved", metadata: %{product_id: product.id})
-    {:noreply, refresh(socket)}
+    {:noreply, refresh(socket) |> assign(show_view_modal: false, selected_product: nil)}
   end
 
   def handle_event("reject", %{"id" => id}, socket) do
     product = Catalog.get_product!(id)
     {:ok, product} = Catalog.reject_product(product)
     _ = Audit.log_admin_action(admin_id: (socket.assigns[:current_admin] && socket.assigns.current_admin.id), target_user_id: product.artisan_id, action: "product_rejected", metadata: %{product_id: product.id})
-    {:noreply, refresh(socket)}
+    {:noreply, refresh(socket) |> assign(show_view_modal: false, selected_product: nil)}
   end
 
   def handle_event("remove", %{"id" => id}, socket) do
     product = Catalog.get_product!(id)
     {:ok, product} = Catalog.remove_product(product)
     _ = Audit.log_admin_action(admin_id: (socket.assigns[:current_admin] && socket.assigns.current_admin.id), target_user_id: product.artisan_id, action: "product_removed", metadata: %{product_id: product.id})
-    {:noreply, refresh(socket)}
+    {:noreply, refresh(socket) |> assign(show_view_modal: false, selected_product: nil)}
+  end
+
+  def handle_event("view_product", %{"id" => id}, socket) do
+    product = Catalog.get_product!(id)
+    {:noreply, assign(socket, show_view_modal: true, selected_product: product)}
+  end
+
+  def handle_event("close_view_modal", _params, socket) do
+    {:noreply, assign(socket, show_view_modal: false, selected_product: nil)}
   end
 
   defp refresh(socket) do
