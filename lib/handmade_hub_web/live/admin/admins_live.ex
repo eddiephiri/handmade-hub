@@ -8,7 +8,7 @@ defmodule HandmadeHubWeb.Admin.AdminsLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(search: "", admins: Admins.list_admins(), show_modal: false)
+     |> assign(search: "", admins: Admins.list_admins(), show_modal: false, confirming_action: nil)
      |> assign_form(Admins.change_admin_registration(%Admin{}))}
   end
 
@@ -68,6 +68,18 @@ defmodule HandmadeHubWeb.Admin.AdminsLive do
     end
   end
 
+  def handle_event("confirm_approve", %{"id" => id}, socket) do
+    {:noreply, assign(socket, confirming_action: %{action: "approve", id: id})}
+  end
+
+  def handle_event("confirm_reject", %{"id" => id}, socket) do
+    {:noreply, assign(socket, confirming_action: %{action: "reject", id: id})}
+  end
+
+  def handle_event("clear_confirmation", _params, socket) do
+    {:noreply, assign(socket, confirming_action: nil)}
+  end
+
   def handle_event("approve", %{"id" => id}, socket) do
     if socket.assigns.current_admin.role == "super_admin" do
       admin = Admins.get_admin!(id)
@@ -85,13 +97,13 @@ defmodule HandmadeHubWeb.Admin.AdminsLive do
           {:noreply,
            socket
            |> put_flash(:info, "Admin approved successfully")
-           |> assign(admins: Admins.list_admins())}
+           |> assign(admins: Admins.list_admins(), confirming_action: nil)}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not approve admin")}
+          {:noreply, put_flash(socket, :error, "Could not approve admin") |> assign(confirming_action: nil)}
       end
     else
-      {:noreply, put_flash(socket, :error, "Only super admins can approve admins")}
+      {:noreply, put_flash(socket, :error, "Only super admins can approve admins") |> assign(confirming_action: nil)}
     end
   end
 
@@ -112,13 +124,13 @@ defmodule HandmadeHubWeb.Admin.AdminsLive do
           {:noreply,
            socket
            |> put_flash(:info, "Admin rejected and removed")
-           |> assign(admins: Admins.list_admins())}
+           |> assign(admins: Admins.list_admins(), confirming_action: nil)}
 
         {:error, _} ->
-          {:noreply, put_flash(socket, :error, "Could not reject admin")}
+          {:noreply, put_flash(socket, :error, "Could not reject admin") |> assign(confirming_action: nil)}
       end
     else
-      {:noreply, put_flash(socket, :error, "Only super admins can reject admins")}
+      {:noreply, put_flash(socket, :error, "Only super admins can reject admins") |> assign(confirming_action: nil)}
     end
   end
 

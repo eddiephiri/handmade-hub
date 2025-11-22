@@ -7,7 +7,7 @@ defmodule HandmadeHubWeb.Admin.OrdersLive do
     {:ok,
      socket
      |> assign(search: "", status: "", payment_status: "", orders: Orders.list_orders_admin())
-     |> assign(show_assign_modal: false, selected_order: nil, available_riders: [])}
+     |> assign(show_assign_modal: false, selected_order: nil, available_riders: [], confirming_refund: nil)}
   end
 
   @impl true
@@ -31,6 +31,15 @@ defmodule HandmadeHubWeb.Admin.OrdersLive do
     {:noreply, refresh(socket)}
   end
 
+  def handle_event("confirm_refund", %{"id" => id}, socket) do
+    order = Orders.get_order!(id)
+    {:noreply, assign(socket, confirming_refund: %{order_id: id, order: order})}
+  end
+
+  def handle_event("clear_refund_confirmation", _params, socket) do
+    {:noreply, assign(socket, confirming_refund: nil)}
+  end
+
   def handle_event("refund", %{"id" => id, "reason" => reason}, socket) do
     order = Orders.get_order!(id)
 
@@ -46,10 +55,11 @@ defmodule HandmadeHubWeb.Admin.OrdersLive do
         {:noreply,
          socket
          |> put_flash(:info, "Refund initiated successfully")
+         |> assign(confirming_refund: nil)
          |> refresh()}
 
       {:error, reason_msg} ->
-        {:noreply, put_flash(socket, :error, "Failed to initiate refund: #{reason_msg}")}
+        {:noreply, put_flash(socket, :error, "Failed to initiate refund: #{reason_msg}") |> assign(confirming_refund: nil)}
     end
   end
 

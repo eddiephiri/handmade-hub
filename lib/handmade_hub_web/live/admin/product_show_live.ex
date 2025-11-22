@@ -9,8 +9,21 @@ defmodule HandmadeHubWeb.Admin.ProductShowLive do
      assign(socket,
        product: product,
        status: product.approval_status,
-       category_form: to_form(%{"category" => product.category || ""})
+       category_form: to_form(%{"category" => product.category || ""}),
+       confirming_action: nil
      )}
+  end
+
+  def handle_event("confirm_set_status", %{"status" => status}, socket) do
+    {:noreply, assign(socket, confirming_action: %{action: "set_status", status: status})}
+  end
+
+  def handle_event("confirm_remove", _params, socket) do
+    {:noreply, assign(socket, confirming_action: %{action: "remove"})}
+  end
+
+  def handle_event("clear_confirmation", _params, socket) do
+    {:noreply, assign(socket, confirming_action: nil)}
   end
 
   @impl true
@@ -31,10 +44,10 @@ defmodule HandmadeHubWeb.Admin.ProductShowLive do
           action: "product_status_changed",
           metadata: %{product_id: updated.id, status: status}
         )
-        {:noreply, assign(socket, product: updated, status: status)}
+        {:noreply, assign(socket, product: updated, status: status, confirming_action: nil)}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not update status")}
+        {:noreply, put_flash(socket, :error, "Could not update status") |> assign(confirming_action: nil)}
     end
   end
 
@@ -63,10 +76,10 @@ defmodule HandmadeHubWeb.Admin.ProductShowLive do
           action: "product_removed",
           metadata: %{product_id: updated.id}
         )
-        {:noreply, push_navigate(assign(socket, product: updated), to: ~p"/admin/products")}
+        {:noreply, push_navigate(assign(socket, product: updated, confirming_action: nil), to: ~p"/admin/products")}
 
       {:error, _} ->
-        {:noreply, put_flash(socket, :error, "Could not remove product")}
+        {:noreply, put_flash(socket, :error, "Could not remove product") |> assign(confirming_action: nil)}
     end
   end
 end

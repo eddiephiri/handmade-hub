@@ -74,7 +74,7 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900"><%= HandmadeHubWeb.FormatHelpers.format_currency(o.total) %></td>
             <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-              <button phx-click="refund" phx-value-id={o.id} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Refund</button>
+              <button phx-click="confirm_refund" phx-value-id={o.id} class="inline-flex items-center px-2.5 py-1.5 rounded-md text-xs font-medium bg-rose-50 text-rose-700 hover:bg-rose-100">Refund</button>
             </td>
           </tr>
         <% end %>
@@ -118,6 +118,48 @@
       </form>
     </div>
   </div>
+<% end %>
+
+<!-- Refund Confirmation Modal -->
+<%= if @confirming_refund do %>
+  <.modal id="refund-confirmation-modal" show on_cancel={JS.push("clear_refund_confirmation")}>
+    <div class="p-6">
+      <h2 class="text-lg font-bold mb-4">Confirm Refund</h2>
+      <p class="mb-4">
+        Are you sure you want to refund order <strong><%= @confirming_refund.order.order_number %></strong>?
+      </p>
+      <p class="mb-4 text-sm text-slate-600">
+        Refund amount: <strong><%= HandmadeHubWeb.FormatHelpers.format_currency(@confirming_refund.order.total) %></strong>
+      </p>
+      <form phx-submit="refund" phx-value-id={@confirming_refund.order.id}>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Reason for refund</label>
+          <textarea 
+            name="reason" 
+            required
+            class="w-full border rounded-md px-3 py-2 text-sm"
+            placeholder="Enter reason for refund..."
+            rows="3"
+          ></textarea>
+        </div>
+        <div class="flex justify-end gap-4">
+          <button 
+            type="button"
+            phx-click="clear_refund_confirmation" 
+            class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-700"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit"
+            class="px-4 py-2 rounded-md text-white bg-rose-600 hover:bg-rose-700"
+          >
+            Confirm Refund
+          </button>
+        </div>
+      </form>
+    </div>
+  </.modal>
 <% end %>
 
 

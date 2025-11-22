@@ -7,7 +7,7 @@ defmodule HandmadeHubWeb.Admin.BuyersLive do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(search: "", status: "all", buyers: Accounts.list_buyers())}
+     |> assign(search: "", status: "all", buyers: Accounts.list_buyers(), confirming_action: nil)}
   end
 
   @impl true
@@ -19,6 +19,15 @@ defmodule HandmadeHubWeb.Admin.BuyersLive do
   def handle_event("filter", %{"status" => status}, socket) do
     buyers = Accounts.list_buyers(search: socket.assigns.search, suspended: suspended_filter(status))
     {:noreply, assign(socket, status: status, buyers: buyers)}
+  end
+
+  def handle_event("confirm_toggle_suspend", %{"id" => id, "suspend" => suspend}, socket) do
+    user = Accounts.get_user!(id)
+    {:noreply, assign(socket, confirming_action: %{action: "toggle_suspend", id: id, suspend: suspend, user: user})}
+  end
+
+  def handle_event("clear_confirmation", _params, socket) do
+    {:noreply, assign(socket, confirming_action: nil)}
   end
 
   def handle_event("toggle_suspend", %{"id" => id, "suspend" => suspend}, socket) do
@@ -34,7 +43,7 @@ defmodule HandmadeHubWeb.Admin.BuyersLive do
     )
 
     buyers = Accounts.list_buyers(search: socket.assigns.search, suspended: suspended_filter(socket.assigns.status))
-    {:noreply, assign(socket, buyers: buyers)}
+    {:noreply, assign(socket, buyers: buyers, confirming_action: nil)}
   end
 
   defp suspended_filter("suspended"), do: true

@@ -7,7 +7,7 @@ defmodule HandmadeHubWeb.Admin.ReviewsLive do
 
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, assign(socket, search: "", visibility: "all", flagged: "all", reviews: list_reviews(%{}))}
+    {:ok, assign(socket, search: "", visibility: "all", flagged: "all", reviews: list_reviews(%{}), confirming_action: nil)}
   end
 
   @impl true
@@ -33,11 +33,19 @@ defmodule HandmadeHubWeb.Admin.ReviewsLive do
     {:noreply, assign(socket, reviews: list_reviews(%{search: socket.assigns.search, visibility: socket.assigns.visibility, flagged: socket.assigns.flagged}))}
   end
 
+  def handle_event("confirm_delete", %{"id" => id}, socket) do
+    {:noreply, assign(socket, confirming_action: %{action: "delete", id: id})}
+  end
+
+  def handle_event("clear_confirmation", _params, socket) do
+    {:noreply, assign(socket, confirming_action: nil)}
+  end
+
   def handle_event("delete", %{"id" => id}, socket) do
     review = Repo.get!(Review, id)
     {:ok, _} = Repo.delete(review)
     _ = Audit.log_admin_action(admin_id: (socket.assigns[:current_admin] && socket.assigns.current_admin.id), target_user_id: review.user_id, action: "review_deleted", metadata: %{review_id: review.id})
-    {:noreply, assign(socket, reviews: list_reviews(%{search: socket.assigns.search, visibility: socket.assigns.visibility, flagged: socket.assigns.flagged}))}
+    {:noreply, assign(socket, reviews: list_reviews(%{search: socket.assigns.search, visibility: socket.assigns.visibility, flagged: socket.assigns.flagged}), confirming_action: nil)}
   end
 
   defp list_reviews(%{search: search, visibility: visibility, flagged: flagged}) do
