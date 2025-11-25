@@ -205,11 +205,15 @@
         <button 
           phx-click={"execute_#{@confirming_action.action}"} 
           phx-value-id={@confirming_action.id}
-          class="px-4 py-2 rounded-md text-white <%= case @confirming_action.action do
-            "approve" -> "bg-emerald-600 hover:bg-emerald-700"
-            "reject" -> "bg-amber-600 hover:bg-amber-700"
-            "remove" -> "bg-rose-600 hover:bg-rose-700"
-          end %>"
+          class={[
+            "px-4 py-2 rounded-md text-white",
+            case @confirming_action.action do
+              "approve" -> "bg-emerald-600 hover:bg-emerald-700"
+              "reject" -> "bg-amber-600 hover:bg-amber-700"
+              "remove" -> "bg-rose-600 hover:bg-rose-700"
+              _ -> "bg-gray-600 hover:bg-gray-700"
+            end
+          ]}
         >
           Confirm
         </button>
