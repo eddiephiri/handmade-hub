@@ -1,5 +1,21 @@
 <div class="max-w-7xl mx-auto p-6">
-  <h1 class="text-2xl font-bold mb-6">Analytics</h1>
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">Analytics</h1>
+    <div class="flex gap-2">
+      <.link
+        href={~p"/admin/reports/monthly-series.csv"}
+        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50"
+      >
+        CSV
+      </.link>
+      <.link
+        href={~p"/admin/reports/monthly-series.xlsx"}
+        class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50"
+      >
+        Excel
+      </.link>
+    </div>
+  </div>
 
   <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
     <div class="bg-white border rounded p-4"><div class="text-sm text-gray-500">Users</div><div class="text-2xl font-semibold"><%= @total_users %></div></div>

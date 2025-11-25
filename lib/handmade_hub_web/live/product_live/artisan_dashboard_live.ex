@@ -471,6 +471,13 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
     {:noreply, assign(socket, products: products)}
   end
 
+  defp map_stats_period("today"), do: "today"
+  defp map_stats_period("week"), do: "this_week"
+  defp map_stats_period("month"), do: "this_month"
+  defp map_stats_period("year"), do: "this_year"
+  defp map_stats_period("all"), do: "all_time"
+  defp map_stats_period(_), do: "all_time"
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -1171,15 +1178,35 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                     <option value="year" selected={@stats_period == "year"}>This Year</option>
                     <option value="all" selected={@stats_period == "all"}>All Time</option>
                   </select>
-                  <button
-                    phx-click="print_report"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-                  >
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                    </svg>
-                    <span>Print Report</span>
-                  </button>
+                  <div class="flex gap-2">
+                    <.link
+                      href={~p"/artisan/reports/sales.pdf?date_range=#{map_stats_period(@stats_period)}"}
+                      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span>PDF</span>
+                    </.link>
+                    <.link
+                      href={~p"/artisan/reports/sales.xlsx?date_range=#{map_stats_period(@stats_period)}"}
+                      class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span>Excel</span>
+                    </.link>
+                    <.link
+                      href={~p"/artisan/reports/sales.csv?date_range=#{map_stats_period(@stats_period)}"}
+                      class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                    >
+                      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span>CSV</span>
+                    </.link>
+                  </div>
                 </div>
               </div>
 

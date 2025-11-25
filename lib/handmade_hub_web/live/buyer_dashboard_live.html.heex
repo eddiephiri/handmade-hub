@@ -134,9 +134,31 @@
       <div class="p-6 border-b border-gray-200">
         <div class="flex justify-between items-center">
           <h2 class="text-lg font-semibold text-gray-900">Recent Orders</h2>
-          <.link navigate={~p"/orders"} class="text-sm text-indigo-600 hover:text-indigo-500 font-medium">
-            View all orders →
-          </.link>
+          <div class="flex items-center gap-3">
+            <div class="flex gap-2">
+              <.link
+                href={~p"/buyer/reports/orders.pdf"}
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50"
+              >
+                PDF
+              </.link>
+              <.link
+                href={~p"/buyer/reports/orders.xlsx"}
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50"
+              >
+                Excel
+              </.link>
+              <.link
+                href={~p"/buyer/reports/orders.csv"}
+                class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50"
+              >
+                CSV
+              </.link>
+            </div>
+            <.link navigate={~p"/orders"} class="text-sm text-indigo-600 hover:text-indigo-500 font-medium">
+              View all orders →
+            </.link>
+          </div>
         </div>
       </div>
       

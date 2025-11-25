@@ -122,6 +122,12 @@ defmodule HandmadeHubWeb.Router do
       # Artisan dashboard route (restricted to artisans only)
       live "/artisan/dashboard", ArtisanDashboardLive, :index
 
+      # Artisan report routes
+      get "/artisan/reports/sales.pdf", ArtisanReportsController, :export_sales_pdf
+      get "/artisan/reports/sales.xlsx", ArtisanReportsController, :export_sales_excel
+      get "/artisan/reports/sales.csv", ArtisanReportsController, :export_sales_csv
+      get "/artisan/reports/revenue.csv", ArtisanReportsController, :export_revenue_csv
+
       # Order management routes for users
       live "/orders", OrderLive.Index, :index
       live "/orders/:id", OrderLive.Show, :show
@@ -129,6 +135,12 @@ defmodule HandmadeHubWeb.Router do
 
       # Buyer dashboard route
       live "/buyer/dashboard", BuyerDashboardLive, :index
+
+      # Buyer report routes
+      get "/buyer/reports/orders.pdf", BuyerReportsController, :export_orders_pdf
+      get "/buyer/reports/orders.xlsx", BuyerReportsController, :export_orders_excel
+      get "/buyer/reports/orders.csv", BuyerReportsController, :export_orders_csv
+      get "/buyer/reports/purchases.xlsx", BuyerReportsController, :export_purchases_excel
 
       # Checkout routes
       live "/checkout", CheckoutLive, :index
@@ -183,6 +195,11 @@ defmodule HandmadeHubWeb.Router do
       live "/reviews", Admin.ReviewsLive, :index
       live "/analytics", Admin.AnalyticsLive, :index
       get "/reports/orders.csv", AdminReportsController, :export_orders_csv
+      get "/reports/orders.pdf", AdminReportsController, :export_orders_pdf
+      get "/reports/orders.xlsx", AdminReportsController, :export_orders_excel
+      get "/reports/monthly-series.csv", AdminReportsController, :export_monthly_series_csv
+      get "/reports/monthly-series.xlsx", AdminReportsController, :export_monthly_series_excel
+      get "/reports/platform-performance.pdf", AdminReportsController, :export_platform_performance_pdf
       live "/settings", Admin.SettingsLive, :index
       live "/transactions", Admin.TransactionsLive, :index
       live "/payouts", Admin.PayoutsLive, :index

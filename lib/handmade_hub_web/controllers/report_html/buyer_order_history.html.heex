@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= @title %></title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #1f2937;
+      padding: 40px;
+      background: white;
+    }
+    .header {
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111827;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    thead {
+      background: #f3f4f6;
+    }
+    th {
+      text-align: left;
+      padding: 12px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #374151;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 12px;
+    }
+    .text-right {
+      text-align: right;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+      color: #6b7280;
+      font-size: 11px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .badge-processing {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+    .badge-delivered {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    .badge-cancelled {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1><%= @title %></h1>
+    <p>Buyer: <%= @buyer.name || @buyer.email %></p>
+    <p>Generated: <%= Calendar.strftime(@generated_at, "%B %d, %Y at %I:%M %p") %></p>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Orders</div>
+      <div class="stat-value"><%= @stats.total_orders %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Spent</div>
+      <div class="stat-value"><%= HandmadeHubWeb.FormatHelpers.format_currency(@stats.total_spent) %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Delivered Orders</div>
+      <div class="stat-value"><%= @stats.delivered_orders %></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Average Order Value</div>
+      <div class="stat-value"><%= HandmadeHubWeb.FormatHelpers.format_currency(@stats.average_order_value) %></div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Order Number</th>
+        <th>Date</th>
+        <th>Status</th>
+        <th>Payment Status</th>
+        <th class="text-right">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <%= if Enum.empty?(@orders) do %>
+        <tr>
+          <td colspan="5" style="text-align: center; padding: 40px; color: #6b7280;">
+            No orders found
+          </td>
+        </tr>
+      <% else %>
+        <%= for order <- @orders do %>
+          <tr>
+            <td><%= order.order_number || "—" %></td>
+            <td><%= Calendar.strftime(order.inserted_at, "%Y-%m-%d") %></td>
+            <td>
+              <span class="badge badge-<%= String.downcase(order.status || "pending") %>">
+                <%= String.capitalize(order.status || "Pending") %>
+              </span>
+            </td>
+            <td>
+              <span class="badge badge-<%= String.downcase(order.payment_status || "pending") %>">
+                <%= String.capitalize(order.payment_status || "Pending") %>
+              </span>
+            </td>
+            <td class="text-right"><%= HandmadeHubWeb.FormatHelpers.format_currency(order.total || Decimal.new("0")) %></td>
+          </tr>
+        <% end %>
+      <% end %>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <p>Handmade Hub - Order History Report</p>
+    <p>This report was generated automatically on <%= Calendar.strftime(@generated_at, "%B %d, %Y at %I:%M %p UTC") %></p>
+  </div>
+</body>
+</html>
+
