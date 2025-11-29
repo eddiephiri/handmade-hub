@@ -63,14 +63,17 @@
         <button phx-click="clear_confirmation" class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-700">
           Cancel
         </button>
-        <button 
-          phx-click={if @confirming_action.action == "set_status", do: "set_status", else: "remove"}
-          phx-value-status={if @confirming_action.action == "set_status", do: @confirming_action.status}
-          class="px-4 py-2 rounded-md text-white <%= case @confirming_action do
+        <%
+          action_class = case @confirming_action do
             %{action: "set_status", status: "approved"} -> "bg-emerald-600 hover:bg-emerald-700"
             %{action: "set_status", status: "rejected"} -> "bg-amber-600 hover:bg-amber-700"
             %{action: "remove"} -> "bg-rose-600 hover:bg-rose-700"
-          end %>"
+          end
+        %>
+        <button 
+          phx-click={if @confirming_action.action == "set_status", do: "set_status", else: "remove"}
+          phx-value-status={if @confirming_action.action == "set_status", do: @confirming_action.status}
+          class={"px-4 py-2 rounded-md text-white #{action_class}"}
         >
           Confirm
         </button>
