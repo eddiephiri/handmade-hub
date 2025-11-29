@@ -79,11 +79,15 @@
         <button phx-click="clear_confirmation" class="px-4 py-2 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-700">
           Cancel
         </button>
+        <%
+          suspend_class = if @confirming_action.suspend == "true", do: "bg-rose-600 hover:bg-rose-700", else: "bg-emerald-600 hover:bg-emerald-700"
+          button_class = "px-4 py-2 rounded-md text-white " <> suspend_class
+        %>
         <button 
           phx-click="toggle_suspend" 
           phx-value-id={@confirming_action.id}
           phx-value-suspend={@confirming_action.suspend}
-          class="px-4 py-2 rounded-md text-white <%= if @confirming_action.suspend == "true", do: "bg-rose-600 hover:bg-rose-700", else: "bg-emerald-600 hover:bg-emerald-700" %>"
+          class={button_class}
         >
           Confirm
         </button>
