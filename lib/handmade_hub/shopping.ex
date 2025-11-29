@@ -191,7 +191,7 @@ defmodule HandmadeHub.Shopping do
   def list_cart_items(cart_id) do
     CartItem
     |> where([ci], ci.cart_id == ^cart_id)
-    |> preload([:product])
+    |> preload([product: :product_images])
     |> Repo.all()
   end
 

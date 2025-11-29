@@ -133,8 +133,10 @@ defmodule HandmadeHubWeb.CartLive do
   # Helper function for getting product image
   def get_product_image(product) do
     cond do
-      # Use primary image if available
-      is_list(product.product_images) and product.product_images != [] ->
+      # Use primary image if available (check if association is loaded and not empty)
+      Ecto.assoc_loaded?(product.product_images) and
+      is_list(product.product_images) and
+      product.product_images != [] ->
         case Enum.find(product.product_images, & &1.is_primary) do
           nil -> product.product_images |> List.first() |> Map.get(:image_url)
           img -> img.image_url
