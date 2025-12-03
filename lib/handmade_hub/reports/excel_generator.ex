@@ -6,11 +6,12 @@ defmodule HandmadeHub.Reports.ExcelGenerator do
   alias HandmadeHubWeb.FormatHelpers
 
   @doc """
-  Generates an Excel workbook from worksheets.
+  Generates an Excel workbook from sheets.
   Returns a binary that can be written to a file or streamed.
   """
-  def generate(worksheets, _opts \\ []) do
-    workbook = %Elixlsx.Workbook{worksheets: worksheets}
+  def generate(sheets, _opts \\ []) do
+    # Elixlsx expects a list of %Elixlsx.Sheet{} in the :sheets field
+    workbook = %Elixlsx.Workbook{sheets: sheets}
     Elixlsx.write_to_memory(workbook)
   end
 
@@ -31,7 +32,7 @@ defmodule HandmadeHub.Reports.ExcelGenerator do
 
     all_rows = [header_row | data_rows]
 
-    %Elixlsx.Worksheet{
+    %Elixlsx.Sheet{
       name: name,
       rows: all_rows
     }
