@@ -166,12 +166,12 @@
             <td><%= order.order_number || "—" %></td>
             <td><%= Calendar.strftime(order.inserted_at, "%Y-%m-%d") %></td>
             <td>
-              <span class="badge badge-<%= String.downcase(order.status || "pending") %>">
+              <span class={"badge badge-" <> String.downcase(order.status || "pending")}>
                 <%= String.capitalize(order.status || "Pending") %>
               </span>
             </td>
             <td>
-              <span class="badge badge-<%= String.downcase(order.payment_status || "pending") %>">
+              <span class={"badge badge-" <> String.downcase(order.payment_status || "pending")}>
                 <%= String.capitalize(order.payment_status || "Pending") %>
               </span>
             </td>
