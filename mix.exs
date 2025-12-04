@@ -63,7 +63,8 @@ defmodule HandmadeHub.MixProject do
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:dotenv, "~> 3.0", only: [:dev, :test]},
-      {:pdf_generator, "~> 0.7"},
+      # pdf_generator latest available on Hex is 0.6.2
+      {:pdf_generator, "~> 0.6.2"},
       # Elixlsx 0.6+ defines the %Elixlsx.Workbook{} struct used in ExcelGenerator
       {:elixlsx, "~> 0.6.0"}
     ]
