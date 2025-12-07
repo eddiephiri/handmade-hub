@@ -29,6 +29,7 @@ services:
       - "${PHX_PORT}:${PHX_PORT}"
     volumes:
       - uploads_data:/app/priv/static/uploads
+      - ./crash_dumps:/app/crash_dumps
 
 volumes:
   db_data:

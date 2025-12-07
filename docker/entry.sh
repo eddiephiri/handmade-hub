@@ -26,6 +26,10 @@ bin/handmade_hub eval 'HandmadeHub.Release.migrate()'
 # Ensure uploads directory exists
 mkdir -p /app/priv/static/uploads
 
+# Set crash dump location to a mounted volume for easier access
+export ERL_CRASH_DUMP=/app/crash_dumps/erl_crash.dump
+mkdir -p /app/crash_dumps
+
 echo "Starting app..."
 exec bin/handmade_hub start
 
