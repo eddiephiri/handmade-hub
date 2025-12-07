@@ -23,6 +23,9 @@ fi
 echo "Running migrations..."
 bin/handmade_hub eval 'HandmadeHub.Release.migrate()'
 
+# Ensure uploads directory exists
+mkdir -p /app/priv/static/uploads
+
 echo "Starting app..."
 exec bin/handmade_hub start
 
