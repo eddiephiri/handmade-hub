@@ -66,12 +66,18 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Delivery simulation defaults
+config :handmade_hub, :delivery_simulator,
+  delivery_time_minutes: 5
+
 # Quantum scheduler config
 config :handmade_hub, HandmadeHub.Scheduler,
   timezone: :utc,
   jobs: [
     # Every minute, attempt to dispatch pending emails
     {"* * * * *", {HandmadeHub.Notifications, :dispatch_pending_emails, []}},
+    # Every minute, simulate rider deliveries that have elapsed
+    {"* * * * *", {HandmadeHub.Delivery.Simulator, :process_deliveries, []}},
     # Every Monday at 9:00 AM UTC for weekly payouts
     {"0 9 * * 1", {HandmadeHub.Payments.PayoutScheduler, :process_scheduled_payouts, []}}
   ]

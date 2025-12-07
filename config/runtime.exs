@@ -1,5 +1,19 @@
 import Config
 
+delivery_minutes_env = System.get_env("DELIVERY_SIMULATION_MINUTES")
+
+if delivery_minutes_env do
+  case Integer.parse(delivery_minutes_env) do
+    {minutes, ""} when minutes >= 0 ->
+      config :handmade_hub, :delivery_simulator, delivery_time_minutes: minutes
+
+    _ ->
+      IO.warn(
+        "DELIVERY_SIMULATION_MINUTES must be a non-negative integer, received #{inspect(delivery_minutes_env)}"
+      )
+  end
+end
+
 # config/runtime.exs is executed for all environments, including
 # during releases. It is executed after compilation and before the
 # system starts, so it is typically used to load production configuration
@@ -49,7 +63,7 @@ if config_env() == :prod do
       """
 
   host = System.get_env("PHX_HOST") || "example.com"
-  port = String.to_integer(System.get_env("PHX_PORT") || "9706")
+  port = String.to_integer(System.get_env("PHX_PORT") || System.get_env("PORT") || "9706")
 
   config :handmade_hub, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
@@ -138,6 +152,13 @@ if config_env() == :prod do
       auth: :always,
       retries: 2,
       no_mx_lookups: false
+  end
+
+  # Fallback: Use Local adapter if no SMTP credentials are provided
+  # This prevents the application from crashing if email credentials are not configured
+  unless System.get_env("GMAIL_USERNAME") || System.get_env("SENDGRID_API_KEY") do
+    config :handmade_hub, HandmadeHub.Mailer,
+      adapter: Swoosh.Adapters.Local
   end
 
   # Configure Swoosh API Client
