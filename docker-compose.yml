@@ -30,10 +30,11 @@ services:
       - "${PHX_PORT}:${PHX_PORT}"
     volumes:
       - uploads_data:/app/priv/static/uploads
-      - ./crash_dumps:/app/crash_dumps
+      - crash_dumps_data:/app/crash_dumps
 
 volumes:
   db_data:
   uploads_data:
+  crash_dumps_data:
 
 

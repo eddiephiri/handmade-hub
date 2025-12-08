@@ -7,15 +7,8 @@ ENV MIX_ENV=prod \
     LANG=C.UTF-8
 
 # Install build dependencies: build-essential, git, node for assets if needed
-# Install in smaller batches with cleanup between to minimize disk usage
 RUN apt-get update -y && \
-    apt-get install -y --no-install-recommends build-essential git curl && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
-    apt-get update -y && \
-    apt-get install -y --no-install-recommends nodejs && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* && \
-    apt-get update -y && \
-    apt-get install -y --no-install-recommends npm && \
+    apt-get install -y --no-install-recommends build-essential git curl nodejs npm && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
@@ -30,25 +23,37 @@ COPY mix.exs mix.lock ./
 COPY config config
 COPY package.json package-lock.json ./
 
-# Fetch deps
+# Fetch deps and clean build cache
 RUN mix deps.get --only prod && \
-    mix deps.compile
+    mix deps.compile && \
+    mix deps.clean --unused
 
 # Install Node.js dependencies (including Preline)
-RUN npm ci --only=production
+# Use --omit=dev instead of --only=production (deprecated)
+# Clean npm cache to save space
+RUN npm ci --omit=dev && \
+    npm cache clean --force
 
 # Copy the rest of the app
 COPY . .
 
 # Ensure deps are up to date in case options changed after cache step
-RUN mix deps.get --only prod
+# Clean unused deps to save space
+RUN mix deps.get --only prod && \
+    mix deps.clean --unused
 
 # Build assets
 RUN mix assets.deploy
 
+# Remove node_modules after building assets to save space
+RUN rm -rf node_modules
+
 # Compile and build the release
+# Clean up build artifacts to save space
 RUN mix compile && \
-    mix release
+    mix release && \
+    rm -rf _build/prod/lib/*/ebin/*.beam.d && \
+    find _build/prod/lib -name "*.beam" -not -path "*/rel/*" -delete || true
 
 # Copy static assets into the release directory structure
 RUN cp -r priv/static _build/prod/rel/handmade_hub/
@@ -56,16 +61,30 @@ RUN cp -r priv/static _build/prod/rel/handmade_hub/
 # ---- Runtime image ----
 FROM debian:bookworm-slim AS app
 
+# Install runtime dependencies including wkhtmltopdf for PDF generation
+# and locales for UTF-8 support
 RUN mkdir -p /tmp/apt-cache && \
     apt-get update -y && \
     apt-get install -y -o Dir::Cache::Archives=/tmp/apt-cache \
-        --no-install-recommends openssl ca-certificates libstdc++6 curl netcat-openbsd && \
+        --no-install-recommends \
+        openssl \
+        ca-certificates \
+        libstdc++6 \
+        curl \
+        netcat-openbsd \
+        wkhtmltopdf \
+        locales && \
+    # Generate UTF-8 locale
+    sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && \
+    locale-gen && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/apt-cache/*
 
 ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     MIX_ENV=prod \
-    PHX_SERVER=true
+    PHX_SERVER=true \
+    ELIXIR_ERL_OPTIONS="+fnu +fnl"
 
 WORKDIR /app
 
