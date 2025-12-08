@@ -44,10 +44,19 @@ if config_env() == :prod do
 
   maybe_ipv6 = if System.get_env("ECTO_IPV6") in ~w(true 1), do: [:inet6], else: []
 
+  pool_size_env = System.get_env("POOL_SIZE") || "10"
+  pool_size = case Integer.parse(pool_size_env) do
+    {size, ""} -> size
+    _ -> raise """
+      Invalid POOL_SIZE value: #{inspect(pool_size_env)}.
+      POOL_SIZE must be a valid integer.
+      """
+  end
+
   config :handmade_hub, HandmadeHub.Repo,
     # ssl: true,
     url: database_url,
-    pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
+    pool_size: pool_size,
     socket_options: maybe_ipv6
 
   # The secret key base is used to sign/encrypt cookies and other secrets.
@@ -63,7 +72,14 @@ if config_env() == :prod do
       """
 
   host = System.get_env("PHX_HOST") || "example.com"
-  port = String.to_integer(System.get_env("PHX_PORT") || System.get_env("PORT") || "9706")
+  port_env = System.get_env("PHX_PORT") || System.get_env("PORT") || "9706"
+  port = case Integer.parse(port_env) do
+    {port_num, ""} -> port_num
+    _ -> raise """
+      Invalid port value: #{inspect(port_env)}.
+      PHX_PORT or PORT must be a valid integer.
+      """
+  end
 
   config :handmade_hub, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 

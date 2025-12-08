@@ -25,7 +25,18 @@ defmodule HandmadeHub.Application do
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: HandmadeHub.Supervisor]
-    Supervisor.start_link(children, opts)
+
+    case Supervisor.start_link(children, opts) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:shutdown, reason}} ->
+        require Logger
+        Logger.error("Application failed to start: #{inspect(reason)}")
+        {:error, reason}
+      {:error, reason} ->
+        require Logger
+        Logger.error("Application failed to start: #{inspect(reason)}")
+        {:error, reason}
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration

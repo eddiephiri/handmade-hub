@@ -25,6 +25,7 @@ services:
       PAWAPAY_CALLBACK_URL: ${PAWAPAY_CALLBACK_URL}
       GMAIL_USERNAME: ${GMAIL_USERNAME}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      ERL_CRASH_DUMP: /app/crash_dumps/erl_crash.dump
     ports:
       - "${PHX_PORT}:${PHX_PORT}"
     volumes:
