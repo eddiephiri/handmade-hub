@@ -27,11 +27,14 @@ defmodule HandmadeHub.Reports.PDFGenerator do
   Generates a PDF from a Phoenix template.
   """
   def generate_from_template(conn, template, assigns, opts \\ []) do
-    html = Phoenix.Template.render_to_string(
-      HandmadeHubWeb.ReportHTML,
-      template,
-      Map.merge(assigns, %{conn: conn})
-    )
+    # Phoenix.Template exposes render_to_string/4 (template name without format).
+    html =
+      Phoenix.Template.render_to_string(
+        HandmadeHubWeb.ReportHTML,
+        template,
+        "html",
+        Map.merge(assigns, %{conn: conn})
+      )
 
     generate_from_html(html, opts)
   end
@@ -51,7 +54,7 @@ defmodule HandmadeHub.Reports.PDFGenerator do
       layout: false
     }
 
-    generate_from_template(conn, "admin_orders_report.html", assigns, opts)
+    generate_from_template(conn, "admin_orders_report", assigns, opts)
   end
 
   @doc """
@@ -68,6 +71,6 @@ defmodule HandmadeHub.Reports.PDFGenerator do
       layout: false
     }
 
-    generate_from_template(conn, "monthly_series_report.html", assigns, opts)
+    generate_from_template(conn, "monthly_series_report", assigns, opts)
   end
 end

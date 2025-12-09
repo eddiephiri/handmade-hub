@@ -115,7 +115,7 @@ defmodule HandmadeHubWeb.AdminReportsController do
       layout: false
     }
 
-    case PDFGenerator.generate_from_template(conn, "platform_performance_report.html", assigns) do
+    case PDFGenerator.generate_from_template(conn, "platform_performance_report", assigns) do
       {:ok, pdf_binary} ->
         filename = "platform_performance_#{timestamp()}.pdf"
 
