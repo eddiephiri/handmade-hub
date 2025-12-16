@@ -15,6 +15,13 @@ defmodule HandmadeHub.Accounts.User do
     field :name, :string
     field :bio, :string
     field :profile_image, :string
+    field :skills, {:array, :string}, default: []
+    field :highlights, {:array, :string}, default: []
+    field :story, :string
+
+    # Virtual helpers for editing array fields as text in forms
+    field :skills_text, :string, virtual: true
+    field :highlights_text, :string, virtual: true
 
     timestamps(type: :utc_datetime)
   end
@@ -172,8 +179,52 @@ defmodule HandmadeHub.Accounts.User do
   Returns an `%Ecto.Changeset{}` for changing the user profile.
   """
   def profile_changeset(user, attrs) do
+    attrs =
+      attrs
+      |> ensure_virtual(:skills_text, user.skills)
+      |> ensure_virtual(:highlights_text, user.highlights)
+
     user
-    |> cast(attrs, [:name, :bio, :profile_image])
+    |> cast(attrs, [:name, :bio, :profile_image, :story, :skills_text, :highlights_text])
+    |> normalize_profile_lists()
     |> validate_length(:bio, max: 500)
+    |> validate_length(:story, max: 4000)
   end
+
+  defp ensure_virtual(attrs, key, existing_list) do
+    cond do
+      Map.has_key?(attrs, key) -> attrs
+      Map.has_key?(attrs, Atom.to_string(key)) -> attrs
+      true -> Map.put(attrs, key, Enum.join(existing_list || [], "\n"))
+    end
+  end
+
+  defp normalize_profile_lists(changeset) do
+    skills =
+      changeset
+      |> get_field(:skills_text)
+      |> split_lines()
+
+    highlights =
+      changeset
+      |> get_field(:highlights_text)
+      |> split_lines()
+
+    changeset
+    |> put_change(:skills, skills)
+    |> put_change(:highlights, highlights)
+  end
+
+  defp split_lines(nil), do: []
+
+  defp split_lines(text) when is_binary(text) do
+    text
+    |> String.split(~r/[\n,]+/, trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+    |> Enum.take(20)
+  end
+
+  defp split_lines(_), do: []
 end

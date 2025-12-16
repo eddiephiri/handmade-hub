@@ -5,10 +5,8 @@ defmodule HandmadeHubWeb.Admin.ArtisanShowLive do
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     user = Accounts.get_user!(id)
-    {:ok, assign(socket, user: user, form: Accounts.update_user_profile(user, %{}) |> case do
-      {:ok, u} -> to_form(%{"name" => u.name, "bio" => u.bio})
-      _ -> to_form(%{"name" => user.name, "bio" => user.bio})
-    end,
+    form = HandmadeHub.Accounts.User.profile_changeset(user, %{}) |> to_form()
+    {:ok, assign(socket, user: user, form: form,
       products: Catalog.list_user_products(user.id),
       orders: Orders.list_user_orders(user.id),
       activity_logs: Audit.list_user_activity_logs(user.id, limit: 20))}
@@ -25,7 +23,10 @@ defmodule HandmadeHubWeb.Admin.ArtisanShowLive do
           metadata: %{updated: Map.keys(attrs)}
         )
 
-        {:noreply, socket |> put_flash(:info, "Profile updated") |> assign(user: user, form: to_form(attrs))}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Profile updated")
+         |> assign(user: user, form: HandmadeHub.Accounts.User.profile_changeset(user, %{}) |> to_form())}
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Could not update profile")}
     end

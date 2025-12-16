@@ -1040,6 +1040,27 @@ defmodule HandmadeHubWeb.ArtisanDashboardLive do
                 >
                   <.input field={@profile_form[:name]} type="text" label="Full Name" class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500" />
                   <.input field={@profile_form[:bio]} type="textarea" label="Bio" class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500" />
+                  <.input
+                    field={@profile_form[:skills_text]}
+                    type="textarea"
+                    label="Skills & techniques"
+                    placeholder="E.g., Wood carving&#10;Metal embossing"
+                    class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  <.input
+                    field={@profile_form[:highlights_text]}
+                    type="textarea"
+                    label="Highlights"
+                    placeholder="E.g., 10+ years in copper work&#10;Featured at local crafts fair"
+                    class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
+                  <.input
+                    field={@profile_form[:story]}
+                    type="textarea"
+                    label="Story"
+                    placeholder="Share your journey, inspiration, and what makes your work unique."
+                    class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500"
+                  />
                   <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Profile Image</label>
                     <.live_file_input upload={@uploads.profile_image} class="rounded-xl border-slate-200 focus:border-blue-500 focus:ring-blue-500" />

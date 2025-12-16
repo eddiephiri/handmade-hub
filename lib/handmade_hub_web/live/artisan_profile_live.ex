@@ -142,6 +142,43 @@ defmodule HandmadeHubWeb.ArtisanProfileLive do
           </div>
         </div>
 
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Skills & Techniques</h3>
+            <%= if (@artisan.skills || []) == [] do %>
+              <p class="text-sm text-gray-500">This artisan hasn’t shared skills yet.</p>
+            <% else %>
+              <div class="flex flex-wrap gap-2">
+                <%= for skill <- @artisan.skills do %>
+                  <span class="px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-sm font-medium"><%= skill %></span>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Highlights</h3>
+            <%= if (@artisan.highlights || []) == [] do %>
+              <p class="text-sm text-gray-500">No highlights provided.</p>
+            <% else %>
+              <ul class="space-y-2 list-disc list-inside text-gray-700 text-sm">
+                <%= for highlight <- Enum.take(@artisan.highlights, 6) do %>
+                  <li><%= highlight %></li>
+                <% end %>
+              </ul>
+            <% end %>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-1">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3">Story</h3>
+            <%= if @artisan.story && String.trim(@artisan.story) != "" do %>
+              <p class="text-sm text-gray-700 leading-6"><%= @artisan.story %></p>
+            <% else %>
+              <p class="text-sm text-gray-500">This artisan hasn’t shared their story yet.</p>
+            <% end %>
+          </div>
+        </div>
+
         <div>
           <h2 class="text-xl font-semibold text-gray-900 mb-4">Products by <%= @artisan.name || "this artisan" %></h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

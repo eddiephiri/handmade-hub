@@ -8,6 +8,9 @@
       <.simple_form for={@form} phx-submit="save_profile">
         <.input field={@form[:name]} label="Name" />
         <.input field={@form[:bio]} type="textarea" label="Bio" />
+        <.input field={@form[:skills_text]} type="textarea" label="Skills (one per line or comma separated)" />
+        <.input field={@form[:highlights_text]} type="textarea" label="Highlights (one per line)" />
+        <.input field={@form[:story]} type="textarea" label="Story" />
         <:actions>
           <.button>Save</.button>
         </:actions>
