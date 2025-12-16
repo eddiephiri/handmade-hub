@@ -238,6 +238,37 @@ defmodule HandmadeHub.Delivery do
     Assignment.changeset(assignment, attrs)
   end
 
+  @doc """
+  Derives a high-level delivery phase for a given order, based on its status
+  and any associated delivery assignment.
+
+  This is a read-only helper used by UIs and does not change simulator or
+  backend behaviour.
+  """
+  def derive_delivery_phase(order) do
+    assignment = Map.get(order, :delivery_assignment)
+
+    cond do
+      is_nil(assignment) and order.status in ["pending", "processing"] ->
+        :preparing
+
+      assignment && assignment.status == "dispatched" ->
+        :dispatched
+
+      assignment && assignment.status == "in_transit" ->
+        :in_transit
+
+      assignment && assignment.status == "failed" ->
+        :failed
+
+      order.status == "delivered" or (assignment && assignment.status == "delivered") ->
+        :delivered
+
+      true ->
+        :unknown
+    end
+  end
+
   ## Auto-Assignment
 
   @doc """

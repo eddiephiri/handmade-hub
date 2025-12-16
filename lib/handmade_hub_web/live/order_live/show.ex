@@ -2,13 +2,14 @@ defmodule HandmadeHubWeb.OrderLive.Show do
   use HandmadeHubWeb, :live_view
   import HandmadeHubWeb.FormatHelpers
 
-  alias HandmadeHub.Orders
-  alias HandmadeHub.Catalog
+  alias HandmadeHub.{Orders, Catalog, Delivery}
 
   @impl true
   def mount(%{"id" => id}, _session, socket) do
     if socket.assigns.current_user do
-      order = Orders.get_order!(id)
+      order =
+        Orders.get_order!(id)
+        |> HandmadeHub.Repo.preload([:order_items, :shipping_address, :delivery_assignment])
 
       # Verify the order belongs to the current user
       if order.user_id == socket.assigns.current_user.id do
@@ -16,6 +17,9 @@ defmodule HandmadeHubWeb.OrderLive.Show do
          socket
          |> assign(:page_title, "Order ##{order.order_number}")
          |> assign(:order, order)
+         |> assign(:delivery_phase, Delivery.derive_delivery_phase(order))
+         |> assign(:show_edit_instructions_modal, false)
+         |> assign(:instructions_value, order.shipping_address && order.shipping_address.delivery_instructions || "")
          |> assign(:show_artisan_sidebar, true)
          |> load_order_items_with_products(order)}
       else
@@ -61,6 +65,64 @@ defmodule HandmadeHubWeb.OrderLive.Show do
     # This would integrate with a shipping provider API
     # For now, we'll just show a message
     {:noreply, put_flash(socket, :info, "Tracking information will be available soon")}
+  end
+
+  @impl true
+  def handle_event("open_edit_instructions", _params, socket) do
+    order = socket.assigns.order
+
+    if can_edit_delivery_instructions?(order) do
+      instructions = order.shipping_address && order.shipping_address.delivery_instructions || ""
+
+      {:noreply,
+       socket
+       |> assign(:show_edit_instructions_modal, true)
+       |> assign(:instructions_value, instructions)}
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, "Delivery instructions can no longer be updated for this order.")}
+    end
+  end
+
+  @impl true
+  def handle_event("save_delivery_instructions", %{"delivery_instructions" => instructions}, socket) do
+    order = socket.assigns.order
+
+    case Orders.update_delivery_instructions(order.id, instructions) do
+      {:ok, _addr} ->
+        updated_order =
+          Orders.get_order!(order.id)
+          |> HandmadeHub.Repo.preload([:order_items, :shipping_address, :delivery_assignment])
+
+        {:noreply,
+         socket
+         |> assign(:order, updated_order)
+         |> assign(:delivery_phase, Delivery.derive_delivery_phase(updated_order))
+         |> assign(:show_edit_instructions_modal, false)
+         |> assign(:instructions_value, updated_order.shipping_address && updated_order.shipping_address.delivery_instructions || "")
+         |> put_flash(:info, "Delivery instructions updated successfully.")}
+
+      {:error, :locked} ->
+        {:noreply,
+         socket
+         |> assign(:show_edit_instructions_modal, false)
+         |> put_flash(:error, "Delivery instructions can no longer be updated for this order.")}
+
+      {:error, :no_shipping_address} ->
+        {:noreply,
+         socket
+         |> assign(:show_edit_instructions_modal, false)
+         |> put_flash(:error, "This order does not have a shipping address to update.")}
+
+      {:error, changeset} ->
+        # Basic handling: keep modal open and show a generic error
+        _ = changeset
+
+        {:noreply,
+         socket
+         |> put_flash(:error, "Could not update delivery instructions. Please check your input.")}
+    end
   end
 
   defp load_order_items_with_products(socket, order) do
@@ -224,6 +286,24 @@ defmodule HandmadeHubWeb.OrderLive.Show do
   """
   def has_delivery_assignment?(order) do
     not is_nil(order.delivery_assignment) and not is_nil(order.delivery_assignment.rider)
+  end
+
+  def can_edit_delivery_instructions?(order) do
+    assignment = Map.get(order, :delivery_assignment)
+
+    cond do
+      order.status == "delivered" ->
+        false
+
+      is_nil(assignment) ->
+        true
+
+      assignment.status in ["dispatched"] ->
+        true
+
+      true ->
+        false
+    end
   end
 
   @doc """

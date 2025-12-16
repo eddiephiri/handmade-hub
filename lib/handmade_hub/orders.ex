@@ -256,6 +256,47 @@ defmodule HandmadeHub.Orders do
   end
 
   @doc """
+  Updates only the delivery instructions for an order's shipping address.
+
+  This is allowed while the order is not yet delivered and the delivery
+  assignment (if any) is not beyond the dispatched phase.
+  """
+  def update_delivery_instructions(order_id, instructions) when is_binary(instructions) do
+    order =
+      order_id
+      |> get_order!()
+      |> Repo.preload([:shipping_address, :delivery_assignment])
+
+    with true <- can_edit_delivery_instructions?(order),
+         %ShippingAddress{} = addr <- order.shipping_address do
+      addr
+      |> ShippingAddress.changeset(%{delivery_instructions: instructions})
+      |> Repo.update()
+    else
+      false -> {:error, :locked}
+      nil -> {:error, :no_shipping_address}
+    end
+  end
+
+  defp can_edit_delivery_instructions?(order) do
+    assignment = Map.get(order, :delivery_assignment)
+
+    cond do
+      order.status == "delivered" ->
+        false
+
+      is_nil(assignment) ->
+        true
+
+      assignment.status in ["dispatched"] ->
+        true
+
+      true ->
+        false
+    end
+  end
+
+  @doc """
   Cancels an order.
   """
   def cancel_order(order_id) do
